@@ -1,0 +1,183 @@
+# Technical Design Document
+
+## Project
+Emotional Intelligence Dashboard
+
+## Architecture Type
+Batch processing web application
+
+---
+
+# 1. System Overview
+
+The system consists of:
+
+- Frontend (React or simple HTML)
+- Backend API (FastAPI, Python)
+- Deepgram API integration
+- Insight processing layer
+- Visualization layer
+
+---
+
+# 2. High-Level Architecture
+
+Client (Browser)
+    ↓
+FastAPI Backend
+    ↓
+Deepgram Pre-recorded API
+    ↓
+Insight Processing Engine
+    ↓
+Frontend Dashboard
+
+---
+
+# 3. Backend Architecture
+
+## 3.1 Endpoints
+
+POST /upload  
+- Accept file
+- Store temporarily
+
+POST /analyze/{file_id}  
+- Send file to Deepgram
+- Return job_id
+
+GET /results/{job_id}  
+- Return processed results JSON
+
+---
+
+# 4. Deepgram Integration
+
+## Request Parameters
+
+- model: nova-3
+- diarize: true
+- utterances: true
+- sentiment: true
+- punctuate: true
+- smart_format: true
+
+## Output Fields Used
+
+- utterances[]
+- words[]
+- speaker labels
+- sentiment scores
+
+---
+
+# 5. Data Model
+
+## Utterance
+
+{
+  start_ms: number,
+  end_ms: number,
+  speaker_id: string,
+  text: string,
+  sentiment_score: float,
+  confidence: float
+}
+
+## Insight
+
+{
+  type: string,
+  timestamp: number,
+  severity: float,
+  description: string
+}
+
+---
+
+# 6. Insight Processing Engine
+
+## 6.1 Conflict Heatmap
+
+heat = max(0, -sentiment_score)
+
+Aggregate into 5-second bins.
+
+---
+
+## 6.2 Loop Detection
+
+- Maintain sliding window of recent utterances
+- Use cosine similarity (TF-IDF)
+- Threshold: >0.75 similarity
+
+---
+
+## 6.3 Tone–Words Divergence
+
+If cooperative keywords AND negative sentiment:
+    flag divergence
+
+---
+
+## 6.4 Speaker Dynamics
+
+Compute:
+- Total talk time per speaker
+- Rapid turn switches (<1.5 seconds gap)
+
+---
+
+# 7. Frontend Components
+
+- Upload Page
+- Dashboard Page
+    - TranscriptPanel
+    - SentimentChart
+    - HeatmapBar
+    - InsightCards
+
+---
+
+# 8. Processing Flow
+
+1. Upload file
+2. Store file temporarily
+3. Send to Deepgram
+4. Parse response
+5. Normalize utterances
+6. Compute insights
+7. Return JSON
+8. Render dashboard
+
+---
+
+# 9. Error Handling
+
+- Unsupported format → 400 error
+- Deepgram failure → fallback message
+- Large file → validation error
+
+---
+
+# 10. Security
+
+- Delete file after processing
+- No permanent storage
+- .env for API keys
+
+---
+
+# 11. Scalability (Future)
+
+- Move to async job queue (Celery / Redis)
+- Store results in database
+- Add authentication
+
+---
+
+# 12. Deployment (Hackathon)
+
+- Single FastAPI instance
+- Render / Railway / AWS EC2
+- Environment variable for API key

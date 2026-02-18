@@ -1,0 +1,169 @@
+# Product Requirements Document (PRD)
+
+## Project Name
+Emotional Intelligence Dashboard
+
+## Document Owner
+<Your Name / Team>
+
+## Version
+1.0
+
+## Status
+Draft
+
+---
+
+# 1. Overview
+
+## 1.1 Summary
+
+The Emotional Intelligence Dashboard is a web application that allows users to upload recorded multi-speaker conversations and receive structured emotional and conversational insights. 
+
+The system analyzes uploaded audio files and produces:
+- Speaker-aware transcripts
+- Sentiment analysis per utterance
+- Conflict heatmaps
+- Loop detection
+- Tone–words divergence flags
+
+The goal is to transform raw audio into actionable emotional intelligence.
+
+---
+
+# 2. Problem Statement
+
+Multi-speaker conversations often contain subtle emotional dynamics and recurring patterns that are difficult to identify from raw transcripts. 
+
+Users need a tool that:
+- Detects emotional shifts
+- Identifies tension points
+- Surfaces repeated arguments
+- Highlights conversational imbalance
+
+Traditional transcripts do not provide this structural emotional insight.
+
+---
+
+# 3. Goals
+
+- Provide speaker-labeled transcripts
+- Visualize emotional trajectory over time
+- Detect conflict spikes
+- Identify looping or repeated topics
+- Deliver insights within 2 minutes of upload
+
+---
+
+# 4. Non-Goals (Out of Scope)
+
+- Real-time streaming analysis
+- Live AI conversation agent
+- Long-term cloud storage of user audio
+- Manual editing of transcripts (MVP)
+
+---
+
+# 5. Target Users
+
+- Managers reviewing meetings
+- Coaches analyzing sessions
+- Researchers reviewing interviews
+- Individuals reflecting on conversations
+
+---
+
+# 6. User Flow
+
+1. User visits web app
+2. User uploads audio file (WAV, MP3, M4A)
+3. User clicks "Analyze"
+4. Backend processes audio
+5. Dashboard displays:
+   - Transcript
+   - Sentiment graph
+   - Heatmap
+   - Insight flags
+
+---
+
+# 7. Functional Requirements
+
+## 7.1 Audio Upload
+- Accept WAV, MP3, M4A
+- Max file size: 100MB
+- Display upload progress
+- Show processing status
+
+## 7.2 Speech Processing
+System must:
+- Generate transcript
+- Perform speaker diarization
+- Segment utterances
+- Compute sentiment per utterance
+
+## 7.3 Insight Generation
+
+System must detect:
+
+### A. Conflict Heatmap
+Negative sentiment aggregated over time windows.
+
+### B. Loop Detection
+Repeated topic or argument within sliding time window.
+
+### C. Tone–Words Divergence
+Positive language combined with negative sentiment.
+
+### D. Speaker Dynamics
+- Talk time per speaker
+- Rapid turn-taking detection
+
+## 7.4 Dashboard
+
+Must include:
+- Speaker-colored transcript panel
+- Sentiment line chart
+- Conflict heatmap
+- Insight cards with timestamp jump
+
+---
+
+# 8. Non-Functional Requirements
+
+## Performance
+- 15-minute audio processed under 2 minutes
+
+## Privacy
+- Audio deleted after processing
+- Clear user notice
+
+## Reliability
+- Graceful handling of low-quality audio
+
+---
+
+# 9. Success Metrics
+
+- ≥85% perceived transcript accuracy
+- At least 3 meaningful insights per 15-minute conversation
+- User understands dashboard within 30 seconds
+
+---
+
+# 10. Risks
+
+| Risk | Mitigation |
+|------|------------|
+| Poor diarization | Allow relabeling in future version |
+| Sentiment misinterpretation | Display confidence levels |
+| API downtime | Include demo file fallback |
+
+---
+
+# 11. Future Enhancements
+
+- PDF export
+- Comparative session analysis
+- Natural language summary report
+- Speaker correction interface
