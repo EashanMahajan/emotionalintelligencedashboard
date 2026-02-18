@@ -40,6 +40,13 @@ export async function registerRoutes(
     res.json(jobs);
   });
 
+  app.get("/api/jobs/latest", async (_req, res) => {
+  const jobs = await storage.listJobs();
+  const latest = jobs?.[0]; // assuming listJobs returns newest-first
+  if (!latest) return res.status(404).json({ message: "No jobs yet" });
+  res.json(latest);
+});
+
   return httpServer;
 }
 

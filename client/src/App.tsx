@@ -7,6 +7,7 @@ import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import UploadPage from "@/pages/upload";
 import HistoryPage from "@/pages/history";
+import Nav from "@/components/nav";
 
 function Router() {
   return (
@@ -25,6 +26,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
+        <Nav />
         <Router />
       </TooltipProvider>
     </QueryClientProvider>
