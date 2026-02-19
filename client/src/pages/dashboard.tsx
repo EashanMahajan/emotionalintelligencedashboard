@@ -5,6 +5,7 @@ import { AnalysisResult } from "@shared/schema";
 import { Loader2, AlertCircle, UploadCloud, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SentimentChart } from "@/components/charts/SentimentChart";
+import { ConflictHeatmap } from "@/components/charts/ConflictHeatmap";
 import { Transcript } from "@/components/Transcript";
 import { InsightCard } from "@/components/InsightCard";
 import { SpeakerStats } from "@/components/SpeakerStats";
@@ -117,6 +118,14 @@ export default function Dashboard() {
               <SentimentChart 
                 data={results.overallSentiment} 
                 onPointClick={setActiveTimestamp} 
+              />
+            </div>
+
+            {/* Conflict Heatmap */}
+            <div className="flex-none">
+              <ConflictHeatmap
+                utterances={results.utterances}
+                onBinClick={setActiveTimestamp}
               />
             </div>
 

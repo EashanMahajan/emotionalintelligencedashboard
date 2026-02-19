@@ -325,9 +325,13 @@ export async function analyzeWithDeepgram(jobId: number, input: DeepgramInput): 
   const utterances = buildUtterances(listenResponse);
   const sentiments = collectSentiments(listenResponse);
 
+  // If Deepgram doesn't return sentiment segments, keep utterance-level sentiment
+  // (buildUtterances already extracts sentiment_score from the utterance when available).
   const enrichedUtterances = utterances.map((utterance) => ({
     ...utterance,
-    sentiment_score: scoreUtterance(utterance, sentiments),
+    sentiment_score: sentiments.length
+      ? scoreUtterance(utterance, sentiments)
+      : utterance.sentiment_score,
   }));
 
   const overallSentiment = sentiments.map((segment) => ({
