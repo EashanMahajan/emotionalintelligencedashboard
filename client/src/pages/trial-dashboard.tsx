@@ -147,58 +147,55 @@ export default function TrialDashboard() {
         </div>
       </header>
 
-      <main className="flex-1 container mx-auto px-4 py-6 max-w-6xl">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <main className="flex-1 container mx-auto px-4 py-6 max-w-6xl flex flex-col gap-6">
 
-          {/* Left — Transcript */}
-          <div className="lg:col-span-8 flex flex-col gap-4">
-            <div>
-              <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground mb-3">Transcript</h2>
-              <Transcript
-                utterances={results.utterances}
-                activeTimestamp={activeTimestamp}
-                onUtteranceClick={handleJumpToTimestamp}
-              />
+        {/* Upgrade gate — full-width top row */}
+        <div className="rounded-2xl border border-primary/40 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-5 flex flex-col sm:flex-row items-center gap-5 shadow-sm shadow-primary/10">
+          <div className="flex items-center gap-4 flex-1 min-w-0">
+            <div className="bg-primary/20 border border-primary/30 rounded-full p-3 shrink-0">
+              <Sparkles className="w-5 h-5 text-primary" />
             </div>
-          </div>
-
-          {/* Right — Speaker Dynamics + Upgrade */}
-          <div className="lg:col-span-4 flex flex-col gap-6">
-            <div>
-              <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground mb-3">Speaker Dynamics</h2>
-              <SpeakerStats stats={results.speakerStats} />
-            </div>
-
-            {/* Upgrade gate */}
-            <div className="rounded-2xl border border-border bg-card p-6 flex flex-col items-center text-center gap-4">
-              <div className="bg-muted rounded-full p-3">
-                <Lock className="w-6 h-6 text-muted-foreground" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-base mb-1">Unlock the full picture</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Sign up for free to access everything Resonance has to offer.
-                </p>
-              </div>
-              <div className="w-full space-y-2 text-left">
+            <div className="min-w-0">
+              <h3 className="font-bold text-base mb-1">You're viewing a trial snapshot</h3>
+              <div className="flex flex-wrap gap-x-4 gap-y-1">
                 {[
-                  { icon: TrendingUp, label: "Sentiment timeline & conflict heatmap" },
-                  { icon: Zap, label: "AI-powered key insights & conflict detection" },
-                  { icon: BarChart2, label: "Full speaker sentiment breakdown" },
-                  { icon: FileText, label: "AI-generated conversation report" },
-                  { icon: MessageSquare, label: "Resonance Chat — ask anything about the call" },
+                  { icon: TrendingUp, label: "Sentiment timeline" },
+                  { icon: Zap, label: "AI insights" },
+                  { icon: BarChart2, label: "Speaker sentiment" },
+                  { icon: FileText, label: "AI report" },
+                  { icon: MessageSquare, label: "Resonance Chat" },
                 ].map(({ icon: Icon, label }) => (
-                  <div key={label} className="flex items-center gap-2.5 text-sm text-muted-foreground">
-                    <Icon className="w-3.5 h-3.5 text-primary shrink-0" />
+                  <div key={label} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Icon className="w-3 h-3 text-primary shrink-0" />
                     {label}
                   </div>
                 ))}
               </div>
-              <Button onClick={() => setLocation("/signup")} className="w-full gap-2">
-                <Sparkles className="w-4 h-4" />
-                Create Free Account
-              </Button>
             </div>
+          </div>
+          <Button onClick={() => setLocation("/signup")} size="lg" className="gap-2 shrink-0 shadow-lg shadow-primary/25 font-semibold">
+            <Sparkles className="w-4 h-4" />
+            Create Free Account
+          </Button>
+        </div>
+
+        {/* Content grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+          {/* Left — Transcript */}
+          <div className="lg:col-span-8 flex flex-col gap-4">
+            <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">Transcript</h2>
+            <Transcript
+              utterances={results.utterances}
+              activeTimestamp={activeTimestamp}
+              onUtteranceClick={handleJumpToTimestamp}
+            />
+          </div>
+
+          {/* Right — Speaker Dynamics */}
+          <div className="lg:col-span-4 flex flex-col gap-4">
+            <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">Speaker Dynamics</h2>
+            <SpeakerStats stats={results.speakerStats} />
           </div>
 
         </div>
