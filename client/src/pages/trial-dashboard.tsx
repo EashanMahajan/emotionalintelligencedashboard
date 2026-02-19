@@ -2,10 +2,11 @@ import { useState } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useJob } from "@/hooks/use-jobs";
 import { AnalysisResult } from "@shared/schema";
-import { Loader2, AlertCircle, UploadCloud, ChevronLeft, Lock, Sparkles } from "lucide-react";
+import { Loader2, AlertCircle, ChevronLeft, Lock, Sparkles, TrendingUp, Zap, BarChart2, FileText, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Transcript } from "@/components/Transcript";
 import { SpeakerStats } from "@/components/SpeakerStats";
+import { ResonanceLogo } from "@/components/ResonanceLogo";
 import { motion } from "framer-motion";
 import { isTrialJob } from "@/lib/trial-tracker";
 
@@ -41,15 +42,14 @@ export default function TrialDashboard() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col">
-        <nav className="border-b bg-background/80 backdrop-blur-sm">
-          <div className="mx-auto max-w-7xl px-4 py-4 flex items-center justify-between">
-            <div 
-              className="text-xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent cursor-pointer"
-              onClick={() => setLocation("/")}
-            >
-              Resonance
+        <nav className="border-b border-border/40 bg-background/80 backdrop-blur-md">
+          <div className="mx-auto max-w-6xl px-6 h-14 flex items-center">
+            <div className="flex items-center gap-2 cursor-pointer" onClick={() => setLocation("/")}>
+              <div className="bg-primary/10 border border-primary/20 rounded-lg p-1.5">
+                <ResonanceLogo className="w-4 h-4 text-primary" />
+              </div>
+              <span className="text-base font-semibold uppercase tracking-widest bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent">Resonance</span>
             </div>
-            <Button onClick={() => setLocation("/signup")}>Sign Up</Button>
           </div>
         </nav>
         <div className="flex-1 flex flex-col items-center justify-center bg-background space-y-4">
@@ -71,15 +71,14 @@ export default function TrialDashboard() {
   if (error || !job || !isTrial) {
     return (
       <div className="min-h-screen flex flex-col">
-        <nav className="border-b bg-background/80 backdrop-blur-sm">
-          <div className="mx-auto max-w-7xl px-4 py-4 flex items-center justify-between">
-            <div 
-              className="text-xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent cursor-pointer"
-              onClick={() => setLocation("/")}
-            >
-              Resonance
+        <nav className="border-b border-border/40 bg-background/80 backdrop-blur-md">
+          <div className="mx-auto max-w-6xl px-6 h-14 flex items-center">
+            <div className="flex items-center gap-2 cursor-pointer" onClick={() => setLocation("/")}>
+              <div className="bg-primary/10 border border-primary/20 rounded-lg p-1.5">
+                <ResonanceLogo className="w-4 h-4 text-primary" />
+              </div>
+              <span className="text-base font-semibold uppercase tracking-widest bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent">Resonance</span>
             </div>
-            <Button onClick={() => setLocation("/signup")}>Sign Up</Button>
           </div>
         </nav>
         <div className="flex-1 flex flex-col items-center justify-center bg-background p-4">
@@ -101,15 +100,14 @@ export default function TrialDashboard() {
   if (job.status !== "completed" || !results) {
     return (
       <div className="min-h-screen flex flex-col">
-        <nav className="border-b bg-background/80 backdrop-blur-sm">
-          <div className="mx-auto max-w-7xl px-4 py-4 flex items-center justify-between">
-            <div 
-              className="text-xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent cursor-pointer"
-              onClick={() => setLocation("/")}
-            >
-              Resonance
+        <nav className="border-b border-border/40 bg-background/80 backdrop-blur-md">
+          <div className="mx-auto max-w-6xl px-6 h-14 flex items-center">
+            <div className="flex items-center gap-2 cursor-pointer" onClick={() => setLocation("/")}>
+              <div className="bg-primary/10 border border-primary/20 rounded-lg p-1.5">
+                <ResonanceLogo className="w-4 h-4 text-primary" />
+              </div>
+              <span className="text-base font-semibold uppercase tracking-widest bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent">Resonance</span>
             </div>
-            <Button onClick={() => setLocation("/signup")}>Sign Up</Button>
           </div>
         </nav>
         <div className="flex-1 flex flex-col items-center justify-center bg-background space-y-6">
@@ -133,144 +131,76 @@ export default function TrialDashboard() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="border-b border-border/40 bg-background/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => setLocation("/try")}>
+        <div className="container mx-auto px-4 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" className="shrink-0" onClick={() => setLocation("/try")}>
               <ChevronLeft className="w-5 h-5" />
             </Button>
-            <div>
-              <h1 className="text-lg font-bold tracking-tight">{job.filename}</h1>
-              <p className="text-xs text-muted-foreground">Trial Analysis • {results.utterances.length} turns processed</p>
+            <div className="flex items-center gap-2">
+              <div className="bg-primary/10 border border-primary/20 rounded-lg p-1.5">
+                <ResonanceLogo className="w-4 h-4 text-primary" />
+              </div>
+              <span className="text-base font-semibold uppercase tracking-widest bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent">Resonance</span>
+              <span className="text-xs text-muted-foreground ml-1">· Trial</span>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <motion.div
-              animate={{ 
-                scale: [1, 1.05, 1],
-              }}
-              transition={{ 
-                duration: 2,
-                repeat: Infinity,
-                ease: "easeInOut" 
-              }}
-            >
-              <Button 
-                onClick={() => setLocation("/signup")} 
-                size="lg"
-                className="shadow-2xl shadow-primary/40 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 font-semibold px-6"
-              >
-                <Sparkles className="w-5 h-5 mr-2" />
-                Sign Up for Full Access
-              </Button>
-            </motion.div>
           </div>
         </div>
       </header>
 
-      <main className="flex-1 container mx-auto px-4 py-6 overflow-hidden h-[calc(100vh-64px)]">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
-          <div className="lg:col-span-8 flex flex-col gap-6 h-full overflow-hidden">
-            {/* Blurred Summary */}
-            <div className="flex-none relative">
-              <div className="absolute inset-0 z-10 backdrop-blur-md bg-background/40 rounded-2xl flex flex-col items-center justify-center p-8">
-                <Lock className="w-10 h-10 text-muted-foreground mb-3" />
-                <h3 className="text-lg font-semibold mb-2">AI Summary</h3>
-                <p className="text-muted-foreground text-center text-sm max-w-md">
-                  Get AI-generated conversation summaries
-                </p>
-              </div>
-              <div className="opacity-20 pointer-events-none h-32 bg-card rounded-2xl border" />
-            </div>
+      <main className="flex-1 container mx-auto px-4 py-6 max-w-6xl">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-            {/* Blurred Topics */}
-            <div className="flex-none relative">
-              <div className="absolute inset-0 z-10 backdrop-blur-md bg-background/40 rounded-2xl flex flex-col items-center justify-center p-8">
-                <Lock className="w-10 h-10 text-muted-foreground mb-3" />
-                <h3 className="text-lg font-semibold mb-2">Key Topics</h3>
-                <p className="text-muted-foreground text-center text-sm max-w-md">
-                  Discover automatically extracted conversation topics
-                </p>
-              </div>
-              <div className="opacity-20 pointer-events-none h-28 bg-card rounded-2xl border" />
-            </div>
-
-            {/* Blurred Intents */}
-            <div className="flex-none relative">
-              <div className="absolute inset-0 z-10 backdrop-blur-md bg-background/40 rounded-2xl flex flex-col items-center justify-center p-8">
-                <Lock className="w-10 h-10 text-muted-foreground mb-3" />
-                <h3 className="text-lg font-semibold mb-2">Detected Intents</h3>
-                <p className="text-muted-foreground text-center text-sm max-w-md">
-                  Understand the goals and objectives behind the conversation
-                </p>
-              </div>
-              <div className="opacity-20 pointer-events-none h-28 bg-card rounded-2xl border" />
-            </div>
-
-            {/* Blurred Sentiment Chart */}
-            <div className="flex-none relative">
-              <div className="absolute inset-0 z-10 backdrop-blur-md bg-background/40 rounded-2xl flex flex-col items-center justify-center p-8">
-                <Lock className="w-10 h-10 text-muted-foreground mb-3" />
-                <h3 className="text-lg font-semibold mb-2">Sentiment Analysis</h3>
-                <p className="text-muted-foreground text-center text-sm max-w-md">
-                  Unlock sentiment charts and emotional trajectory analysis
-                </p>
-              </div>
-              <div className="opacity-20 pointer-events-none h-64 bg-card rounded-2xl border" />
-            </div>
-
-            {/* Blurred Conflict Heatmap */}
-            <div className="flex-none relative">
-              <div className="absolute inset-0 z-10 backdrop-blur-md bg-background/40 rounded-2xl flex flex-col items-center justify-center p-8">
-                <Lock className="w-10 h-10 text-muted-foreground mb-3" />
-                <h3 className="text-lg font-semibold mb-2">Conflict Detection</h3>
-                <p className="text-muted-foreground text-center text-sm max-w-md">
-                  Unlock conflict heatmaps and tension analysis
-                </p>
-              </div>
-              <div className="opacity-20 pointer-events-none h-48 bg-card rounded-2xl border" />
-            </div>
-
-            {/* Transcript - Visible */}
-            <div className="flex-1 min-h-0">
-              <Transcript 
-                utterances={results.utterances} 
-                activeTimestamp={activeTimestamp} 
+          {/* Left — Transcript */}
+          <div className="lg:col-span-8 flex flex-col gap-4">
+            <div>
+              <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground mb-3">Transcript</h2>
+              <Transcript
+                utterances={results.utterances}
+                activeTimestamp={activeTimestamp}
                 onUtteranceClick={handleJumpToTimestamp}
               />
             </div>
           </div>
 
-          <div className="lg:col-span-4 flex flex-col gap-6 h-full overflow-y-auto pr-2 pb-6">
-            {/* Blurred Insights */}
-            <div className="space-y-4 relative">
-              <div className="absolute inset-0 z-10 backdrop-blur-md bg-background/60 rounded-2xl flex flex-col items-center justify-center p-6">
-                <Lock className="w-10 h-10 text-muted-foreground mb-3" />
-                <h3 className="text-lg font-semibold mb-2 text-center">Key Insights</h3>
-                <p className="text-muted-foreground text-sm text-center max-w-xs">
-                  AI-powered insights including conflict detection and tone analysis
-                </p>
-              </div>
-              <div className="opacity-20 pointer-events-none">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-bold text-lg">Key Insights</h3>
-                  <span className="bg-primary/10 text-primary text-xs font-bold px-2 py-1 rounded-full">
-                    {results.insights.length}
-                  </span>
-                </div>
-                <div className="space-y-3">
-                  {[1, 2, 3].map((idx) => (
-                    <div key={idx} className="bg-card border rounded-xl p-4 h-20" />
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Speaker Stats - Visible */}
-            <div className="space-y-4 pt-4 border-t border-border">
-              <h3 className="font-bold text-lg">Speaker Dynamics</h3>
+          {/* Right — Speaker Dynamics + Upgrade */}
+          <div className="lg:col-span-4 flex flex-col gap-6">
+            <div>
+              <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground mb-3">Speaker Dynamics</h2>
               <SpeakerStats stats={results.speakerStats} />
             </div>
+
+            {/* Upgrade gate */}
+            <div className="rounded-2xl border border-border bg-card p-6 flex flex-col items-center text-center gap-4">
+              <div className="bg-muted rounded-full p-3">
+                <Lock className="w-6 h-6 text-muted-foreground" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-base mb-1">Unlock the full picture</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Sign up for free to access everything Resonance has to offer.
+                </p>
+              </div>
+              <div className="w-full space-y-2 text-left">
+                {[
+                  { icon: TrendingUp, label: "Sentiment timeline & conflict heatmap" },
+                  { icon: Zap, label: "AI-powered key insights & conflict detection" },
+                  { icon: BarChart2, label: "Full speaker sentiment breakdown" },
+                  { icon: FileText, label: "AI-generated conversation report" },
+                  { icon: MessageSquare, label: "Resonance Chat — ask anything about the call" },
+                ].map(({ icon: Icon, label }) => (
+                  <div key={label} className="flex items-center gap-2.5 text-sm text-muted-foreground">
+                    <Icon className="w-3.5 h-3.5 text-primary shrink-0" />
+                    {label}
+                  </div>
+                ))}
+              </div>
+              <Button onClick={() => setLocation("/signup")} className="w-full gap-2">
+                <Sparkles className="w-4 h-4" />
+                Create Free Account
+              </Button>
+            </div>
           </div>
+
         </div>
       </main>
     </div>

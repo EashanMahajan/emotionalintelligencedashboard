@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { useUploadJob } from "@/hooks/use-jobs";
 import { useDropzone } from "react-dropzone";
 import { UploadCloud, FileAudio, AlertCircle, Loader2, BarChart2, Sparkles, Lock } from "lucide-react";
+import { ResonanceLogo } from "@/components/ResonanceLogo";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -32,13 +33,17 @@ export default function TryPage() {
     
     const file = acceptedFiles[0];
     try {
+      toast({
+        title: "Analysis Started",
+        description: "Uploading and processing your audio…",
+      });
       const result = await uploadMutation.mutateAsync(file);
       incrementTrialUsage(result.id);
       toast({
-        title: "Analysis Started",
-        description: "Processing your audio. Redirecting...",
+        title: "Analysis Complete",
+        description: "Your audio has been fully analysed.",
       });
-      setTimeout(() => setLocation(`/try/results/${result.id}`), 1000);
+      setLocation(`/try/results/${result.id}`);
     } catch (error) {
       toast({
         variant: "destructive",
@@ -66,55 +71,48 @@ export default function TryPage() {
   });
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden flex flex-col">
+    <div className="h-screen overflow-hidden bg-background relative flex flex-col">
       {/* Decorative Background */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
+      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
         <div className="absolute -top-[20%] -right-[10%] w-[50%] h-[50%] bg-primary/5 rounded-full blur-3xl" />
         <div className="absolute top-[40%] -left-[10%] w-[40%] h-[40%] bg-accent/5 rounded-full blur-3xl" />
       </div>
 
       {/* Navigation */}
-      <nav className="relative z-10 border-b bg-background/80 backdrop-blur-sm">
-        <div className="mx-auto max-w-7xl px-4 py-4 flex items-center justify-between">
-          <div 
-            className="text-xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent cursor-pointer"
-            onClick={() => setLocation("/")}
-          >
-            Resonance
+      <nav className="relative z-10 border-b border-border/40 bg-background/80 backdrop-blur-md shrink-0">
+        <div className="mx-auto max-w-6xl px-6 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setLocation("/")}>
+            <div className="bg-primary/10 border border-primary/20 rounded-lg p-1.5">
+              <ResonanceLogo className="w-4 h-4 text-primary" />
+            </div>
+            <span className="text-base font-semibold uppercase tracking-widest bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent">Resonance</span>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="ghost" onClick={() => setLocation("/signin")}>
-              Sign In
-            </Button>
-            <Button onClick={() => setLocation("/signup")}>
-              Sign Up
-            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setLocation("/signin")}>Sign In</Button>
+            <Button size="sm" onClick={() => setLocation("/signup")}>Sign Up</Button>
           </div>
         </div>
       </nav>
 
-      <div className="container mx-auto px-4 flex-1 flex flex-col items-center justify-center relative z-10 py-12">
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 py-4 overflow-hidden">
         {/* Header with Trial Info */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-12 max-w-2xl"
+          transition={{ duration: 0.5 }}
+          className="text-center mb-5 max-w-2xl"
         >
-          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-1.5 rounded-full text-sm font-medium mb-6">
-            <Sparkles className="w-4 h-4" />
+          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3.5 py-1 rounded-full text-xs font-semibold tracking-wide mb-3">
+            <Sparkles className="w-3.5 h-3.5" />
             <span>Try Resonance Free</span>
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
-            Try Resonance Before Signing Up
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-2">
+            Try Before You Sign Up
           </h1>
-          <p className="text-lg text-muted-foreground leading-relaxed mb-6">
-            Upload up to 3 audio files to experience conversation intelligence. 
-            Create an account for unlimited analyses.
+          <p className="text-muted-foreground leading-relaxed mb-3">
+            Upload up to 3 audio files to experience conversation intelligence.
           </p>
-          
-          {/* Usage Counter */}
-          <div className="inline-flex items-center gap-2 bg-muted px-6 py-3 rounded-full">
+          <div className="inline-flex items-center gap-2 bg-muted px-5 py-2 rounded-full">
             <span className="text-sm font-medium">
               {remaining} {remaining === 1 ? 'upload' : 'uploads'} remaining
             </span>
@@ -125,7 +123,7 @@ export default function TryPage() {
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
+          transition={{ delay: 0.15, duration: 0.4 }}
           className="w-full max-w-xl"
         >
           {canUpload ? (
@@ -220,22 +218,21 @@ export default function TryPage() {
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="mt-12 text-center text-sm text-muted-foreground max-w-2xl"
+          transition={{ delay: 0.3 }}
+          className="mt-4 text-center text-sm text-muted-foreground"
         >
-          <p className="mb-4">Trial mode provides:</p>
-          <div className="flex flex-wrap justify-center gap-6">
-            <div className="flex items-center gap-2">
-              <FileAudio className="w-4 h-4" />
+          <div className="flex flex-wrap justify-center gap-5">
+            <div className="flex items-center gap-1.5">
+              <FileAudio className="w-3.5 h-3.5" />
               <span>Full Transcripts</span>
             </div>
-            <div className="flex items-center gap-2">
-              <BarChart2 className="w-4 h-4" />
+            <div className="flex items-center gap-1.5">
+              <BarChart2 className="w-3.5 h-3.5" />
               <span>Speaker Stats</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Lock className="w-4 h-4" />
-              <span className="opacity-50">Advanced Insights (Account Required)</span>
+            <div className="flex items-center gap-1.5 opacity-50">
+              <Lock className="w-3.5 h-3.5" />
+              <span>Advanced Insights (Account Required)</span>
             </div>
           </div>
         </motion.div>

@@ -117,23 +117,23 @@ export default function UploadPage() {
         <div className="absolute -top-[30%] left-1/2 -translate-x-1/2 w-[70%] h-[50%] bg-primary/6 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 py-6">
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 py-3">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-5 max-w-2xl"
+          className="text-center mb-3 max-w-2xl"
         >
-          <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 text-primary px-3.5 py-1 rounded-full text-xs font-semibold tracking-wide mb-3">
+          <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 text-primary px-3.5 py-1 rounded-full text-xs font-semibold tracking-wide mb-2">
             <ResonanceLogo className="w-3.5 h-3.5" />
             Powered by Deepgram AI
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
+          <h1 className="text-3xl font-bold tracking-tight mb-1.5">
             Unlock Conversation
             <span className="bg-gradient-to-r from-primary to-primary/50 bg-clip-text text-transparent"> Insights</span>
           </h1>
-          <p className="text-muted-foreground text-lg leading-relaxed">
+          <p className="text-muted-foreground text-sm leading-relaxed">
             Upload a recording or capture live audio. Get sentiment analysis, speaker dynamics, and conflict detection in seconds.
           </p>
         </motion.div>
@@ -146,7 +146,7 @@ export default function UploadPage() {
           className="w-full max-w-2xl"
         >
           <Tabs defaultValue="upload" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsList className="grid w-full grid-cols-2 mb-3">
               <TabsTrigger value="upload" className="flex items-center gap-2">
                 <UploadCloud className="w-4 h-4" /> Upload File
               </TabsTrigger>
@@ -159,7 +159,7 @@ export default function UploadPage() {
               <div
                 {...getRootProps()}
                 className={cn(
-                  "relative group cursor-pointer bg-card border-2 border-dashed rounded-2xl p-8",
+                  "relative group cursor-pointer bg-card border-2 border-dashed rounded-2xl p-6 h-[320px]",
                   "flex flex-col items-center justify-center text-center transition-all duration-300",
                   "hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5",
                   isDragActive ? "border-primary bg-primary/5 scale-[1.01]" : "border-border/60",
@@ -179,13 +179,13 @@ export default function UploadPage() {
                     </motion.div>
                   ) : (
                     <motion.div key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center">
-                      <div className="bg-primary/10 border border-primary/20 rounded-2xl p-5 mb-5 group-hover:scale-110 group-hover:bg-primary/15 transition-all duration-300">
-                        <UploadCloud className="w-10 h-10 text-primary" />
+                      <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 mb-4 group-hover:scale-110 group-hover:bg-primary/15 transition-all duration-300">
+                        <UploadCloud className="w-9 h-9 text-primary" />
                       </div>
-                      <h3 className="text-xl font-semibold mb-1.5">
+                      <h3 className="text-lg font-semibold mb-1">
                         {isDragActive ? "Drop it here" : "Drag & drop your audio"}
                       </h3>
-                      <p className="text-sm text-muted-foreground mb-6">MP3 · WAV · M4A · MP4 &nbsp;&middot;&nbsp; up to 50 MB</p>
+                      <p className="text-sm text-muted-foreground mb-4">MP3 · WAV · M4A · MP4 &nbsp;&middot;&nbsp; up to 50 MB</p>
                       <Button size="lg" className="rounded-full px-8 shadow-lg shadow-primary/20">
                         Browse Files
                       </Button>
@@ -205,7 +205,7 @@ export default function UploadPage() {
             </TabsContent>
 
             <TabsContent value="record">
-              <div className="bg-card border-2 border-border/60 rounded-2xl p-10 min-h-[360px] flex items-center justify-center">
+              <div className="bg-card border-2 border-border/60 rounded-2xl p-6 h-[320px] flex items-center justify-center">
                 <AudioRecorder onRecordingComplete={handleRecordingComplete} isProcessing={uploadMutation.isPending} />
               </div>
             </TabsContent>
@@ -217,10 +217,10 @@ export default function UploadPage() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.5 }}
-          className="mt-5 grid grid-cols-2 md:grid-cols-4 gap-3 w-full max-w-2xl"
+          className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2 w-full max-w-2xl"
         >
           {FEATURES.map(({ icon: Icon, color, bg, title, desc }) => (
-            <div key={title} className="bg-card border border-border/60 rounded-xl p-4 flex flex-col gap-2.5">
+            <div key={title} className="bg-card border border-border/60 rounded-xl p-3 flex flex-col gap-2">
               <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", bg)}>
                 <Icon className={cn("w-4 h-4", color)} />
               </div>
