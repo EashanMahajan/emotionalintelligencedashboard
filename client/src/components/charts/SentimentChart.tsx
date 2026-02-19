@@ -17,7 +17,6 @@ export function SentimentChart({ data, onPointClick }: SentimentChartProps) {
     }));
   }, [data]);
 
-  // Gradient offsets for coloring the area based on value (positive/negative)
   const gradientOffset = () => {
     const dataMax = Math.max(...chartData.map((i) => i.score));
     const dataMin = Math.min(...chartData.map((i) => i.score));
@@ -89,6 +88,7 @@ export function SentimentChart({ data, onPointClick }: SentimentChartProps) {
               boxShadow: 'var(--shadow-lg)'
             }}
             cursor={{ stroke: 'hsl(var(--foreground))', strokeWidth: 1, strokeDasharray: '4 4' }}
+            formatter={(value: number, name: string) => [Number.isFinite(value) ? value.toFixed(2) : value, name]}
           />
           <Area 
             type="monotone" 

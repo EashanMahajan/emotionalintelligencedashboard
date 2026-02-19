@@ -175,17 +175,73 @@ function buildInsights(
 ): Insight[] {
   const insights: Insight[] = [];
 
-  const conflictPeak = overallSentiment.reduce((max, point) => {
-    return Math.max(max, Math.max(0, -point.score));
-  }, 0);
+  const sentiment = [...overallSentiment].sort((a, b) => a.timestamp - b.timestamp);
+  const conflictPeak = sentiment.reduce((max, point) => Math.max(max, Math.max(0, -point.score)), 0);
+  const firstConflict = sentiment.find((point) => Math.max(0, -point.score) >= 0.6);
   if (conflictPeak > 0.6) {
-    const firstPeak = overallSentiment.find((point) => Math.max(0, -point.score) >= 0.6);
     insights.push({
       type: "conflict",
-      timestamp: firstPeak?.timestamp ?? 0,
+      timestamp: firstConflict?.timestamp ?? 0,
       severity: Math.min(1, conflictPeak),
-      description: "Sustained negative sentiment suggests escalating tension.",
+      description: "A sustained negative stretch suggests a meaningful conflict or frustration point.",
     });
+  }
+
+  if (sentiment.length >= 2) {
+    let worst = { rate: 0, timestamp: sentiment[0]!.timestamp };
+    let best = { rate: 0, timestamp: sentiment[0]!.timestamp };
+    let sumAbs = 0;
+    let acc = 0;
+    for (let i = 0; i < sentiment.length; i++) {
+      const prev = sentiment[i - 1];
+      const curr = sentiment[i]!;
+      const dtMs = prev ? curr.timestamp - prev.timestamp : 0;
+      const dtS = dtMs > 0 ? dtMs / 1000 : 1;
+      const dv = prev ? curr.score - prev.score : 0;
+      const rate = dv / dtS;
+      if (rate < worst.rate) worst = { rate, timestamp: curr.timestamp };
+      if (rate > best.rate) best = { rate, timestamp: curr.timestamp };
+      sumAbs += Math.abs(rate);
+      acc += curr.score * dtS;
+    }
+
+    const avgAbs = sumAbs / sentiment.length;
+
+    if (!conflictPeak || worst.rate < -0.25) {
+      insights.push({
+        type: "conflict",
+        timestamp: worst.timestamp,
+        severity: Math.min(1, Math.max(0.2, Math.abs(worst.rate))),
+        description: "A sharp drop in sentiment often marks an escalation or a triggering moment that changed the tone quickly.",
+      });
+    }
+
+    if (best.rate > 0.25) {
+      insights.push({
+        type: "divergence",
+        timestamp: best.timestamp,
+        severity: Math.min(1, best.rate),
+        description: "A strong rebound in sentiment suggests repair, reassurance, or a productive shift toward resolution.",
+      });
+    }
+
+    if (Math.abs(acc) > 12) {
+      insights.push({
+        type: "divergence",
+        timestamp: sentiment[sentiment.length - 1]!.timestamp,
+        severity: Math.min(1, Math.abs(acc) / 25),
+        description: acc < 0
+          ? "Overall, negative moments outweighed positive ones across the conversation."
+          : "Overall, positive moments outweighed negative ones across the conversation.",
+      });
+    } else if (avgAbs > 0.18) {
+      insights.push({
+        type: "loop",
+        timestamp: sentiment[Math.floor(sentiment.length / 2)]!.timestamp,
+        severity: Math.min(1, avgAbs / 0.5),
+        description: "Frequent tone swings suggest emotional volatility, where the conversation repeatedly shifted between states.",
+      });
+    }
   }
 
   const loopMap = new Map<string, { count: number; timestamp: number }>();
@@ -286,7 +342,22 @@ function buildInsights(
     });
   }
 
-  return insights.slice(0, 4);
+  const unique = new Map<string, Insight>();
+  for (const insight of insights) {
+    const key = `${insight.type}:${insight.description}`;
+    if (!unique.has(key)) unique.set(key, insight);
+  }
+
+  const prioritized = Array.from(unique.values()).sort((a, b) => b.severity - a.severity);
+  if (!prioritized.length) {
+    prioritized.push({
+      type: "divergence",
+      timestamp: utterances[0]?.start_ms ?? 0,
+      severity: 0.3,
+      description: "The overall tone stayed relatively neutral with no single moment dominating the conversation.",
+    });
+  }
+  return prioritized.slice(0, 5);
 }
 
 export async function analyzeWithDeepgram(jobId: number, input: DeepgramInput): Promise<AnalysisResult> {
@@ -325,8 +396,6 @@ export async function analyzeWithDeepgram(jobId: number, input: DeepgramInput): 
   const utterances = buildUtterances(listenResponse);
   const sentiments = collectSentiments(listenResponse);
 
-  // If Deepgram doesn't return sentiment segments, keep utterance-level sentiment
-  // (buildUtterances already extracts sentiment_score from the utterance when available).
   const enrichedUtterances = utterances.map((utterance) => ({
     ...utterance,
     sentiment_score: sentiments.length

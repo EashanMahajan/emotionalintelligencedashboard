@@ -4,7 +4,7 @@ import { useJob } from "@/hooks/use-jobs";
 import { AnalysisResult } from "@shared/schema";
 import { Loader2, AlertCircle, UploadCloud, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SentimentChart } from "@/components/charts/SentimentChart";
+import { SentimentViewer } from "@/components/charts/SentimentViewer";
 import { ConflictHeatmap } from "@/components/charts/ConflictHeatmap";
 import { Transcript } from "@/components/Transcript";
 import { InsightCard } from "@/components/InsightCard";
@@ -19,10 +19,8 @@ export default function Dashboard() {
   const { data: job, isLoading, error } = useJob(id);
   const [activeTimestamp, setActiveTimestamp] = useState<number>(0);
 
-  // Parse results safely
   const results = job?.results as unknown as AnalysisResult | undefined;
 
-  // Handle loading state
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background space-y-4">
@@ -40,7 +38,6 @@ export default function Dashboard() {
     );
   }
 
-  // Handle error or not found
   if (error || !job) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
@@ -63,7 +60,6 @@ export default function Dashboard() {
     );
   }
 
-  // Handle pending/processing state
   if (job.status !== "completed" || !results) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background space-y-6">
@@ -85,7 +81,6 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
       <header className="border-b border-border/40 bg-background/80 backdrop-blur-md sticky top-0 z-50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -106,22 +101,13 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {/* Main Content Grid */}
       <main className="flex-1 container mx-auto px-4 py-6 overflow-hidden h-[calc(100vh-64px)]">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
-          
-          {/* Left Column: Charts & Transcript (8 cols) */}
           <div className="lg:col-span-8 flex flex-col gap-6 h-full overflow-hidden">
-            
-            {/* Top: Sentiment Chart */}
             <div className="flex-none">
-              <SentimentChart 
-                data={results.overallSentiment} 
-                onPointClick={setActiveTimestamp} 
-              />
+              <SentimentViewer data={results.overallSentiment} onPointClick={setActiveTimestamp} />
             </div>
 
-            {/* Conflict Heatmap */}
             <div className="flex-none">
               <ConflictHeatmap
                 utterances={results.utterances}
@@ -129,7 +115,6 @@ export default function Dashboard() {
               />
             </div>
 
-            {/* Bottom: Transcript */}
             <div className="flex-1 min-h-0">
               <Transcript 
                 utterances={results.utterances} 
@@ -139,10 +124,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Right Column: Insights & Stats (4 cols) */}
           <div className="lg:col-span-4 flex flex-col gap-6 h-full overflow-y-auto pr-2 pb-6">
-            
-            {/* Insights Section */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-bold text-lg">Key Insights</h3>
@@ -161,7 +143,6 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Speaker Stats Section */}
             <div className="space-y-4 pt-4 border-t border-border">
               <h3 className="font-bold text-lg">Speaker Dynamics</h3>
               <SpeakerStats stats={results.speakerStats} />

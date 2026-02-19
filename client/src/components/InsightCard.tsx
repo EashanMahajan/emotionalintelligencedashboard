@@ -69,7 +69,7 @@ export function InsightCard({ insight, onClick }: InsightCardProps) {
               {format(new Date(insight.timestamp), 'mm:ss')}
             </span>
           </div>
-          <p className="text-sm text-foreground/80 leading-snug line-clamp-2">
+          <p className="text-sm text-foreground/80 leading-snug">
             {insight.description}
           </p>
         </div>

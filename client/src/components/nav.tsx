@@ -1,7 +1,8 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/auth-context";
-import { LogOut, User } from "lucide-react";
+import { LogOut, Moon, Sun, User } from "lucide-react";
+import { useTheme } from "next-themes";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +15,7 @@ import {
 export default function Nav() {
   const [location, setLocation] = useLocation();
   const { username, logout } = useAuth();
+  const { resolvedTheme, setTheme } = useTheme();
 
   const go = (path: string) => () => setLocation(path);
 
@@ -21,6 +23,8 @@ export default function Nav() {
     logout();
     setLocation("/signin");
   };
+
+  const isDark = resolvedTheme === "dark";
 
   return (
     <header className="w-full border-b bg-background">
@@ -49,6 +53,16 @@ export default function Nav() {
             onClick={go("/history")}
           >
             History
+          </Button>
+
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setTheme(isDark ? "light" : "dark")}
+            aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            title={isDark ? "Light mode" : "Dark mode"}
+          >
+            {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </Button>
 
           <DropdownMenu>

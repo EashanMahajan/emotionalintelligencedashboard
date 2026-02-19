@@ -6,7 +6,6 @@ import { api } from "@shared/routes";
 import { z } from "zod";
 import { analyzeWithDeepgram } from "./deepgram";
 
-// Accept audio/video formats for transcription analysis
 const ALLOWED_MIMES = [
   "audio/mpeg", "audio/mp3", "audio/mp4", "audio/x-m4a", "audio/wav",
   "audio/wave", "audio/x-wav", "audio/m4a", "audio/aac", "audio/ogg",
@@ -15,7 +14,7 @@ const ALLOWED_MIMES = [
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
+  limits: { fileSize: 50 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     const mime = file.mimetype.toLowerCase();
     const isAudio = mime.startsWith("audio/");
@@ -50,7 +49,6 @@ export async function registerRoutes(
     }
   });
 
-  // Upload endpoint - parses multipart file, creates job
   app.post(api.jobs.upload.path, upload.single("file"), async (req, res, next) => {
     try {
       if (!req.file) {
@@ -59,7 +57,6 @@ export async function registerRoutes(
       const filename = req.file.originalname;
       const job = await storage.createJob(filename);
 
-      // Simulate background processing (file in memory but not persisted for mock)
       mockProcessJob(job.id);
 
       res.status(201).json({
@@ -90,7 +87,7 @@ export async function registerRoutes(
 
   app.get("/api/jobs/latest", async (_req, res) => {
   const jobs = await storage.listJobs();
-  const latest = jobs?.[0]; // assuming listJobs returns newest-first
+  const latest = jobs?.[0];
   if (!latest) return res.status(404).json({ message: "No jobs yet" });
   res.json(latest);
 });
@@ -98,9 +95,7 @@ export async function registerRoutes(
   return httpServer;
 }
 
-// Mock Processing Logic to generate realistic data
 async function mockProcessJob(jobId: number) {
-  // Wait 2 seconds to simulate "processing"
   setTimeout(async () => {
     const results = generateMockResults(jobId);
     await storage.updateJobStatus(jobId, "completed", results);
@@ -109,9 +104,8 @@ async function mockProcessJob(jobId: number) {
 
 function generateMockResults(jobId: number) {
   const speakers = ["Speaker A", "Speaker B"];
-  const durationMs = 15 * 60 * 1000; // 15 minutes
+  const durationMs = 15 * 60 * 1000;
   
-  // Generate some utterances
   const utterances = [];
   let currentTime = 0;
   
@@ -140,31 +134,29 @@ function generateMockResults(jobId: number) {
       confidence: 0.95
     });
     
-    currentTime += duration + 500; // 500ms pause
+    currentTime += duration + 500;
   }
 
-  // Generate Sentiment Trend
   const overallSentiment = utterances.map(u => ({
     timestamp: u.start_ms,
     score: u.sentiment_score
   }));
 
-  // Generate Insights
   const insights = [
     {
-      type: "conflict",
+      type: "conflict" as const,
       timestamp: utterances[2].start_ms,
       severity: 0.85,
       description: "Escalating tension detected regarding deadlines."
     },
     {
-      type: "loop",
+      type: "loop" as const,
       timestamp: utterances[4].start_ms,
       severity: 0.7,
       description: "Repeated argument about resource allocation."
     },
     {
-      type: "divergence",
+      type: "divergence" as const,
       timestamp: utterances[6].start_ms,
       severity: 0.6,
       description: "Positive tone shift detected."
