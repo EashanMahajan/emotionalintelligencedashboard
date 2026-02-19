@@ -9,14 +9,16 @@ import Dashboard from "@/pages/dashboard";
 import DashboardOverview from "@/pages/dashboard-overview";
 import UploadPage from "@/pages/upload";
 import HistoryPage from "@/pages/history";
+import LandingPage from "@/pages/landing";
 import SignInPage from "@/pages/signin";
+import SignUpPage from "@/pages/signup";
 import Nav from "@/components/nav";
 
 function ProtectedRoute({ component: Component }: { component: () => JSX.Element }) {
   const { isAuthenticated } = useAuth();
 
   if (!isAuthenticated) {
-    return <Redirect to="/signin" />;
+    return <Redirect to="/" />;
   }
 
   return <Component />;
@@ -27,8 +29,22 @@ function Router() {
 
   return (
     <Switch>
+      {/* Public routes */}
       <Route path="/signin" component={SignInPage} />
-      <Route path="/" component={() => <Redirect to={isAuthenticated ? "/dashboard" : "/signin"} />} />
+      <Route path="/signup" component={SignUpPage} />
+      
+      {/* Landing page - redirects authenticated users to dashboard */}
+      <Route 
+        path="/" 
+        component={() => {
+          if (isAuthenticated) {
+            return <Redirect to="/dashboard" />;
+          }
+          return <LandingPage />;
+        }} 
+      />
+      
+      {/* Protected routes */}
       <Route path="/dashboard" component={() => <ProtectedRoute component={DashboardOverview} />} />
       <Route path="/upload" component={() => <ProtectedRoute component={UploadPage} />} />
       <Route path="/history" component={() => <ProtectedRoute component={HistoryPage} />} />
