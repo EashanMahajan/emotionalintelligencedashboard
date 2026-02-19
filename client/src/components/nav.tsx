@@ -1,8 +1,8 @@
 import { useLocation } from "wouter";
-import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/auth-context";
-import { LogOut, Moon, Sun, User } from "lucide-react";
+import { LogOut, Moon, Sun, User, Brain, LayoutDashboard, UploadCloud, History } from "lucide-react";
 import { useTheme } from "next-themes";
+import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,12 +12,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+const navLinks = [
+  { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard, match: (l: string) => l === "/dashboard" || l.startsWith("/results") },
+  { label: "New Analysis", path: "/upload", icon: UploadCloud, match: (l: string) => l === "/upload" },
+  { label: "History", path: "/history", icon: History, match: (l: string) => l === "/history" },
+];
+
 export default function Nav() {
   const [location, setLocation] = useLocation();
   const { username, logout } = useAuth();
   const { resolvedTheme, setTheme } = useTheme();
-
-  const go = (path: string) => () => setLocation(path);
 
   const handleLogout = () => {
     logout();
@@ -27,66 +31,96 @@ export default function Nav() {
   const isDark = resolvedTheme === "dark";
 
   return (
-    <header className="w-full border-b bg-background">
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-        <div className="text-sm font-semibold">
-          Emotional Intelligence AI
-        </div>
+    <header className="w-full sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-md">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 h-14">
+        {/* Logo */}
+        <button onClick={() => setLocation("/dashboard")} className="flex items-center gap-2 group">
+          <div className="bg-primary/10 border border-primary/20 rounded-lg p-1.5 group-hover:bg-primary/20 transition-colors">
+            <Brain className="w-4 h-4 text-primary" />
+          </div>
+          <span className="text-base font-bold tracking-tight">Resonance</span>
+        </button>
 
+        {/* Pill nav */}
+        <nav className="hidden sm:flex items-center bg-muted/50 border border-border/50 rounded-xl px-1.5 py-1.5 gap-0.5">
+          {navLinks.map(({ label, path, icon: Icon, match }) => {
+            const active = match(location);
+            return (
+              <button
+                key={path}
+                onClick={() => setLocation(path)}
+                className={cn(
+                  "flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all duration-150",
+                  active
+                    ? "bg-background text-foreground shadow-sm border border-border/50"
+                    : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+                )}
+              >
+                <Icon className={cn("w-3.5 h-3.5", active && "text-primary")} />
+                {label}
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Right controls */}
         <div className="flex items-center gap-2">
-          <Button
-            variant={location === "/dashboard" || location.startsWith("/results") ? "default" : "outline"}
-            onClick={go("/dashboard")}
-          >
-            Dashboard
-          </Button>
-
-          <Button
-            variant={location === "/upload" ? "default" : "outline"}
-            onClick={go("/upload")}
-          >
-            Upload
-          </Button>
-
-          <Button
-            variant={location === "/history" ? "default" : "outline"}
-            onClick={go("/history")}
-          >
-            History
-          </Button>
-
-          <Button
-            variant="outline"
-            size="icon"
+          <button
             onClick={() => setTheme(isDark ? "light" : "dark")}
-            aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-            title={isDark ? "Light mode" : "Dark mode"}
+            aria-label="Toggle theme"
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           >
             {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </Button>
+          </button>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <User className="w-4 h-4" />
-                <span className="hidden sm:inline">{username}</span>
-              </Button>
+              <button className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl border border-border/60 bg-muted/30 hover:bg-muted/60 transition-colors">
+                <div className="w-6 h-6 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                  <User className="w-3.5 h-3.5 text-primary" />
+                </div>
+                <span className="hidden sm:inline text-sm font-medium max-w-[160px] truncate">{username}</span>
+              </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuContent align="end" className="w-52">
               <DropdownMenuLabel>
-                <div className="flex flex-col">
-                  <span className="font-medium">{username}</span>
-                  <span className="text-xs text-muted-foreground">Signed in</span>
+                <div className="flex items-center gap-2.5 py-1">
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                    <User className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="font-semibold text-sm truncate">{username}</span>
+                    <span className="text-xs text-muted-foreground">Signed in</span>
+                  </div>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout} className="text-destructive cursor-pointer">
-                <LogOut className="w-4 h-4 mr-2" />
-                Sign Out
+              <DropdownMenuItem onClick={handleLogout} className="text-destructive cursor-pointer gap-2 focus:text-destructive">
+                <LogOut className="w-4 h-4" /> Sign Out
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+      </div>
+
+      {/* Mobile bottom nav */}
+      <div className="sm:hidden flex border-t border-border/50">
+        {navLinks.map(({ label, path, icon: Icon, match }) => {
+          const active = match(location);
+          return (
+            <button
+              key={path}
+              onClick={() => setLocation(path)}
+              className={cn(
+                "flex-1 flex flex-col items-center gap-0.5 py-2 text-[11px] font-medium transition-colors",
+                active ? "text-primary" : "text-muted-foreground"
+              )}
+            >
+              <Icon className="w-4 h-4" />
+              {label}
+            </button>
+          );
+        })}
       </div>
     </header>
   );

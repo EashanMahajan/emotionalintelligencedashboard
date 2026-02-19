@@ -70,7 +70,9 @@ export function InsightCard({ insight, onClick }: InsightCardProps) {
             </span>
           </div>
           <p className="text-sm text-foreground/80 leading-snug">
-            {insight.description}
+            {typeof insight.description === 'string' 
+              ? insight.description 
+              : (insight.description as any)?.short || 'No description available'}
           </p>
         </div>
 

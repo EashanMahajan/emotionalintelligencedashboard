@@ -1,4 +1,8 @@
-# Emotional Intelligence Dashboard
+# Resonance
+
+> Understanding the emotional wavelengths of conversation
+
+**Resonance** is a conversation intelligence platform that analyzes multi-speaker audio to reveal emotional dynamics, sentiment patterns, and conversational insights.
 
 ## Setup & Running Locally
 

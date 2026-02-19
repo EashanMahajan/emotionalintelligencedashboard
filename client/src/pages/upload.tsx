@@ -2,11 +2,44 @@ import { useState, useCallback } from "react";
 import { useLocation } from "wouter";
 import { useUploadJob } from "@/hooks/use-jobs";
 import { useDropzone } from "react-dropzone";
-import { UploadCloud, FileAudio, AlertCircle, Loader2, BarChart2 } from "lucide-react";
+import { UploadCloud, FileAudio, AlertCircle, Loader2, BarChart2, Mic, ShieldCheck, Zap, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
+import { AudioRecorder } from "@/components/AudioRecorder";
+
+const FEATURES = [
+  {
+    icon: Brain,
+    color: "text-primary",
+    bg: "bg-primary/10",
+    title: "Emotion Analysis",
+    desc: "Sentiment scored per utterance across the full conversation",
+  },
+  {
+    icon: BarChart2,
+    color: "text-emerald-400",
+    bg: "bg-emerald-500/10",
+    title: "Speaker Dynamics",
+    desc: "Talk-time balance, turn cadence, and per-speaker tone",
+  },
+  {
+    icon: Zap,
+    color: "text-amber-400",
+    bg: "bg-amber-500/10",
+    title: "Conflict Detection",
+    desc: "Automatic flagging of tension peaks and divergence points",
+  },
+  {
+    icon: ShieldCheck,
+    color: "text-violet-400",
+    bg: "bg-violet-500/10",
+    title: "Topic & Intent",
+    desc: "AI-extracted topics and intents mapped to transcript segments",
+  },
+];
 
 export default function UploadPage() {
   const [, setLocation] = useLocation();
@@ -21,15 +54,15 @@ export default function UploadPage() {
     try {
       const result = await uploadMutation.mutateAsync(file);
       toast({
-        title: "Upload Successful",
-        description: "Analysis started. Redirecting to dashboard...",
+        title: "Analysis Started",
+        description: "Processing your audio. Redirecting to dashboard...",
       });
       // Redirect to results page
       setTimeout(() => setLocation(`/results/${result.id}`), 1000);
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Upload Failed",
+        title: "Analysis Failed",
         description: error instanceof Error ? error.message : "Something went wrong",
       });
     }
@@ -41,133 +74,153 @@ export default function UploadPage() {
     onDragLeave: () => setIsDragActive(false),
     accept: {
       "audio/mpeg": [".mp3"],
+      "audio/wav": [".wav"],
+      "audio/m4a": [".m4a"],
+      "audio/mp4": [".mp4"],
+      "video/mp4": [".mp4"],
     },
     maxFiles: 1,
     maxSize: 50 * 1024 * 1024, // 50MB
     multiple: false,
   });
 
+  const handleRecordingComplete = useCallback(async (audioBlob: Blob, filename: string) => {
+    const file = new File([audioBlob], filename, { type: audioBlob.type });
+    try {
+      const result = await uploadMutation.mutateAsync(file);
+      toast({
+        title: "Analysis Started",
+        description: "Processing your recording...",
+      });
+      setTimeout(() => setLocation(`/results/${result.id}`), 1000);
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Analysis Failed",
+        description: error instanceof Error ? error.message : "Something went wrong",
+      });
+    }
+  }, [uploadMutation, setLocation, toast]);
+
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden flex flex-col">
-      {/* Decorative Background Elements */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
-        <div className="absolute -top-[20%] -right-[10%] w-[50%] h-[50%] bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute top-[40%] -left-[10%] w-[40%] h-[40%] bg-accent/5 rounded-full blur-3xl" />
+    <div className="h-screen overflow-hidden bg-background flex flex-col">
+      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute -top-[30%] left-1/2 -translate-x-1/2 w-[70%] h-[50%] bg-primary/6 rounded-full blur-3xl" />
       </div>
 
-      <div className="container mx-auto px-4 flex-1 flex flex-col items-center justify-center relative z-10 py-12">
-        
-        {/* Header Section */}
-        <motion.div 
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 py-6">
+        {/* Header */}
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-12 max-w-2xl"
+          transition={{ duration: 0.5 }}
+          className="text-center mb-5 max-w-2xl"
         >
-          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-1.5 rounded-full text-sm font-medium mb-6">
-            <BarChart2 className="w-4 h-4" />
-            <span>Emotional Intelligence AI</span>
+          <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 text-primary px-3.5 py-1 rounded-full text-xs font-semibold tracking-wide mb-3">
+            <Brain className="w-3.5 h-3.5" />
+            Powered by Deepgram AI
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 bg-gradient-to-br from-foreground to-muted-foreground bg-clip-text text-transparent">
-            Unlock Conversation Insights
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
+            Unlock Conversation
+            <span className="bg-gradient-to-r from-primary to-primary/50 bg-clip-text text-transparent"> Insights</span>
           </h1>
-          <p className="text-lg text-muted-foreground leading-relaxed">
-            Upload your meeting recordings, sales calls, or interviews. Our AI will analyze speaker dynamics, sentiment trends, and detect conflict points instantly.
+          <p className="text-muted-foreground text-lg leading-relaxed">
+            Upload a recording or capture live audio. Get sentiment analysis, speaker dynamics, and conflict detection in seconds.
           </p>
         </motion.div>
 
-        {/* Upload Card */}
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
+        {/* Upload card */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.97 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-          className="w-full max-w-xl"
+          transition={{ delay: 0.15, duration: 0.4 }}
+          className="w-full max-w-2xl"
         >
-          <div
-            {...getRootProps()}
-            className={cn(
-              "relative group cursor-pointer",
-              "bg-card border-2 border-dashed rounded-2xl p-10 md:p-16",
-              "flex flex-col items-center justify-center text-center",
-              "transition-all duration-300 ease-in-out",
-              "hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5",
-              isDragActive ? "border-primary bg-primary/5 scale-[1.02]" : "border-border/60",
-              uploadMutation.isPending && "pointer-events-none opacity-80"
-            )}
-          >
-            <input {...getInputProps()} />
-            
-            <AnimatePresence mode="wait">
-              {uploadMutation.isPending ? (
-                <motion.div
-                  key="loading"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="flex flex-col items-center"
+          <Tabs defaultValue="upload" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="upload" className="flex items-center gap-2">
+                <UploadCloud className="w-4 h-4" /> Upload File
+              </TabsTrigger>
+              <TabsTrigger value="record" className="flex items-center gap-2">
+                <Mic className="w-4 h-4" /> Record Audio
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="upload">
+              <div
+                {...getRootProps()}
+                className={cn(
+                  "relative group cursor-pointer bg-card border-2 border-dashed rounded-2xl p-8",
+                  "flex flex-col items-center justify-center text-center transition-all duration-300",
+                  "hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5",
+                  isDragActive ? "border-primary bg-primary/5 scale-[1.01]" : "border-border/60",
+                  uploadMutation.isPending && "pointer-events-none opacity-80"
+                )}
+              >
+                <input {...getInputProps()} />
+                <AnimatePresence mode="wait">
+                  {uploadMutation.isPending ? (
+                    <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center">
+                      <div className="relative mb-6">
+                        <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full" />
+                        <Loader2 className="w-14 h-14 text-primary animate-spin relative" />
+                      </div>
+                      <h3 className="text-xl font-semibold mb-1">Analysing Audio…</h3>
+                      <p className="text-sm text-muted-foreground">Deepgram is processing your file</p>
+                    </motion.div>
+                  ) : (
+                    <motion.div key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center">
+                      <div className="bg-primary/10 border border-primary/20 rounded-2xl p-5 mb-5 group-hover:scale-110 group-hover:bg-primary/15 transition-all duration-300">
+                        <UploadCloud className="w-10 h-10 text-primary" />
+                      </div>
+                      <h3 className="text-xl font-semibold mb-1.5">
+                        {isDragActive ? "Drop it here" : "Drag & drop your audio"}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mb-6">MP3 · WAV · M4A · MP4 &nbsp;&middot;&nbsp; up to 50 MB</p>
+                      <Button size="lg" className="rounded-full px-8 shadow-lg shadow-primary/20">
+                        Browse Files
+                      </Button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {uploadMutation.isError && (
+                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                  className="mt-4 p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex items-center gap-3 text-destructive"
                 >
-                  <div className="relative mb-6">
-                    <div className="absolute inset-0 bg-primary/30 blur-xl rounded-full animate-pulse" />
-                    <Loader2 className="w-16 h-16 text-primary animate-spin relative" />
-                  </div>
-                  <h3 className="text-xl font-semibold mb-2">Uploading & Analyzing...</h3>
-                  <p className="text-muted-foreground">This may take a moment</p>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="idle"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="flex flex-col items-center"
-                >
-                  <div className="bg-muted rounded-full p-6 mb-6 group-hover:bg-primary/10 group-hover:scale-110 transition-all duration-300">
-                    <UploadCloud className="w-10 h-10 text-muted-foreground group-hover:text-primary transition-colors" />
-                  </div>
-                  <h3 className="text-xl font-semibold mb-2">
-                    {isDragActive ? "Drop audio file here" : "Drag & drop audio file"}
-                  </h3>
-                  <p className="text-muted-foreground mb-8 max-w-xs">
-                    Supports MP3 up to 50MB.
-                  </p>
-                  <Button size="lg" className="rounded-full px-8 shadow-lg shadow-primary/20">
-                    Browse Files
-                  </Button>
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <p className="text-sm">{uploadMutation.error instanceof Error ? uploadMutation.error.message : "Analysis failed."}</p>
                 </motion.div>
               )}
-            </AnimatePresence>
-          </div>
+            </TabsContent>
 
-          {/* Error Message */}
-          {uploadMutation.isError && (
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-6 p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex items-center gap-3 text-destructive"
-            >
-              <AlertCircle className="w-5 h-5 flex-shrink-0" />
-              <p className="text-sm font-medium">
-                {uploadMutation.error instanceof Error ? uploadMutation.error.message : "Upload failed. Please try again."}
-              </p>
-            </motion.div>
-          )}
+            <TabsContent value="record">
+              <div className="bg-card border-2 border-border/60 rounded-2xl p-10 min-h-[360px] flex items-center justify-center">
+                <AudioRecorder onRecordingComplete={handleRecordingComplete} isProcessing={uploadMutation.isPending} />
+              </div>
+            </TabsContent>
+          </Tabs>
         </motion.div>
 
-        {/* Footer Info */}
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="mt-12 flex flex-wrap justify-center gap-8 text-sm text-muted-foreground"
+        {/* Feature grid */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+          className="mt-5 grid grid-cols-2 md:grid-cols-4 gap-3 w-full max-w-2xl"
         >
-          <div className="flex items-center gap-2">
-            <FileAudio className="w-4 h-4" />
-            <span>Secure Processing</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <BarChart2 className="w-4 h-4" />
-            <span>Detailed Analytics</span>
-          </div>
+          {FEATURES.map(({ icon: Icon, color, bg, title, desc }) => (
+            <div key={title} className="bg-card border border-border/60 rounded-xl p-4 flex flex-col gap-2.5">
+              <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", bg)}>
+                <Icon className={cn("w-4 h-4", color)} />
+              </div>
+              <div>
+                <p className="text-xs font-semibold leading-tight">{title}</p>
+                <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">{desc}</p>
+              </div>
+            </div>
+          ))}
         </motion.div>
       </div>
     </div>

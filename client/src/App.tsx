@@ -13,6 +13,8 @@ import HistoryPage from "@/pages/history";
 import LandingPage from "@/pages/landing";
 import SignInPage from "@/pages/signin";
 import SignUpPage from "@/pages/signup";
+import TryPage from "@/pages/try";
+import TrialDashboard from "@/pages/trial-dashboard";
 import Nav from "@/components/nav";
 
 function ProtectedRoute({ component: Component }: { component: () => JSX.Element }) {
@@ -33,6 +35,10 @@ function Router() {
       {/* Public routes */}
       <Route path="/signin" component={SignInPage} />
       <Route path="/signup" component={SignUpPage} />
+      
+      {/* Trial mode routes - no auth required */}
+      <Route path="/try" component={TryPage} />
+      <Route path="/try/results/:id" component={TrialDashboard} />
       
       {/* Landing page - redirects authenticated users to dashboard */}
       <Route 

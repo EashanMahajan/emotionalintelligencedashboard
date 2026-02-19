@@ -4,6 +4,16 @@ import { SentimentChart } from "@/components/charts/SentimentChart";
 import { SentimentDerivativeChart } from "@/components/charts/SentimentDerivativeChart";
 import { SentimentIntegralChart } from "@/components/charts/SentimentIntegralChart";
 import { ChevronLeft, ChevronRight, Info } from "lucide-react";
+import { cn } from "@/lib/utils";
+import type { Utterance } from "@shared/schema";
+
+const SPEAKER_PALETTE = [
+  "bg-blue-500/15 text-blue-400 border-blue-500/30 data-[active=true]:bg-blue-500 data-[active=true]:text-white data-[active=true]:border-blue-500",
+  "bg-violet-500/15 text-violet-400 border-violet-500/30 data-[active=true]:bg-violet-500 data-[active=true]:text-white data-[active=true]:border-violet-500",
+  "bg-emerald-500/15 text-emerald-400 border-emerald-500/30 data-[active=true]:bg-emerald-500 data-[active=true]:text-white data-[active=true]:border-emerald-500",
+  "bg-amber-500/15 text-amber-400 border-amber-500/30 data-[active=true]:bg-amber-500 data-[active=true]:text-white data-[active=true]:border-amber-500",
+  "bg-rose-500/15 text-rose-400 border-rose-500/30 data-[active=true]:bg-rose-500 data-[active=true]:text-white data-[active=true]:border-rose-500",
+];
 
 type View = "trend" | "momentum" | "accumulation";
 
@@ -31,16 +41,48 @@ const VIEWS: Array<{ id: View; label: string; description: string }> = [
 interface SentimentViewerProps {
   data: { timestamp: number; score: number }[];
   onPointClick?: (timestamp: number) => void;
+  utterances?: Utterance[];
 }
 
-export function SentimentViewer({ data, onPointClick }: SentimentViewerProps) {
+export function SentimentViewer({ data, onPointClick, utterances = [] }: SentimentViewerProps) {
   const [view, setView] = useState<View>("trend");
+  const [activeSpeaker, setActiveSpeaker] = useState<string>("combined");
+
+  // Derive unique speakers and per-speaker sentiment series
+  const speakers = useMemo(
+    () => [...new Set(utterances.map((u) => u.speaker_id))].sort(),
+    [utterances]
+  );
+
+  const speakerSeriesMap = useMemo(() => {
+    const map = new Map<string, { timestamp: number; score: number }[]>();
+    for (const id of speakers) {
+      map.set(
+        id,
+        utterances
+          .filter((u) => u.speaker_id === id)
+          .map((u) => ({ timestamp: u.start_ms, score: u.sentiment_score }))
+          .sort((a, b) => a.timestamp - b.timestamp)
+      );
+    }
+    return map;
+  }, [utterances, speakers]);
+
+  const activeData = useMemo(
+    () =>
+      activeSpeaker === "combined"
+        ? data
+        : (speakerSeriesMap.get(activeSpeaker) ?? data),
+    [activeSpeaker, data, speakerSeriesMap]
+  );
+
+  const showSpeakerTabs = speakers.length >= 2;
 
   const viewIndex = useMemo(() => VIEWS.findIndex((v) => v.id === view), [view]);
   const activeMeta = useMemo(() => VIEWS[Math.max(0, viewIndex)] ?? VIEWS[0], [viewIndex]);
 
   const summaries = useMemo(() => {
-    if (!data.length) {
+    if (!activeData.length) {
       const text =
         "No sentiment data is available for this conversation. Once data is present, this view will summarize where the tone changes and where it stays stable.";
       return {
@@ -50,7 +92,7 @@ export function SentimentViewer({ data, onPointClick }: SentimentViewerProps) {
       } as Record<View, string>;
     }
 
-    const sorted = [...data].sort((a, b) => a.timestamp - b.timestamp);
+    const sorted = [...activeData].sort((a, b) => a.timestamp - b.timestamp);
     const first = sorted[0]!;
     const last = sorted[sorted.length - 1]!;
 
@@ -157,7 +199,7 @@ export function SentimentViewer({ data, onPointClick }: SentimentViewerProps) {
       momentum: momentumSummary,
       accumulation: accumulationSummary,
     } as Record<View, string>;
-  }, [data]);
+  }, [activeData]);
 
   const goPrev = () => setView(VIEWS[(viewIndex - 1 + VIEWS.length) % VIEWS.length]!.id);
   const goNext = () => setView(VIEWS[(viewIndex + 1) % VIEWS.length]!.id);
@@ -188,13 +230,46 @@ export function SentimentViewer({ data, onPointClick }: SentimentViewerProps) {
         </div>
       </div>
 
+      {/* Speaker selector — only when 2+ speakers */}
+      {showSpeakerTabs && (
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <button
+            data-active={activeSpeaker === "combined"}
+            onClick={() => setActiveSpeaker("combined")}
+            className={cn(
+              "text-xs font-semibold px-2.5 py-1 rounded-full border transition-colors",
+              activeSpeaker === "combined"
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-muted/50 text-muted-foreground border-border hover:text-foreground"
+            )}
+          >
+            Combined
+          </button>
+          {speakers.map((id, i) => (
+            <button
+              key={id}
+              data-active={activeSpeaker === id}
+              onClick={() => setActiveSpeaker(id)}
+              className={cn(
+                "text-xs font-semibold px-2.5 py-1 rounded-full border transition-colors",
+                activeSpeaker === id
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-muted/50 text-muted-foreground border-border hover:text-foreground"
+              )}
+            >
+              {id}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div>
         {view === "trend" ? (
-          <SentimentChart data={data} onPointClick={onPointClick} />
+          <SentimentChart data={activeData} onPointClick={onPointClick} />
         ) : view === "momentum" ? (
-          <SentimentDerivativeChart data={data} onPointClick={onPointClick} />
+          <SentimentDerivativeChart data={activeData} onPointClick={onPointClick} />
         ) : (
-          <SentimentIntegralChart data={data} onPointClick={onPointClick} />
+          <SentimentIntegralChart data={activeData} onPointClick={onPointClick} />
         )}
       </div>
 

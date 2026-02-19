@@ -1,4 +1,4 @@
-import type { AnalysisResult, Insight, Utterance } from "@shared/schema";
+import type { AnalysisResult, Insight, Utterance, TopicSegment, IntentSegment } from "@shared/schema";
 
 const DEFAULT_MODEL = "nova-3";
 
@@ -321,16 +321,6 @@ function buildInsights(
     });
   }
 
-  const summary = analyzeResponse?.results?.summary || analyzeResponse?.summary;
-  if (summary && insights.length < 2) {
-    insights.push({
-      type: "divergence",
-      timestamp: utterances[0]?.start_ms ?? 0,
-      severity: 0.4,
-      description: summary,
-    });
-  }
-
   const intents = analyzeResponse?.results?.intents || analyzeResponse?.intents;
   if (Array.isArray(intents) && intents.length && insights.length < 3) {
     const topIntent = intents[0];
@@ -367,31 +357,17 @@ export async function analyzeWithDeepgram(jobId: number, input: DeepgramInput): 
     diarize: "true",
     sentiment: "true",
     summarize: "true",
+    topics: "true",
+    intents: "true",
     utterances: "true",
     paragraphs: "true",
     detect_language: "true",
   });
 
-  const analyzeParams = new URLSearchParams({
-    summarize: "true",
-    topics: "true",
-    keywords: "true",
-    entities: "true",
-    intents: "true",
-    sentiment: "true",
-  });
+  const listenResult = await callDeepgram("listen", listenParams, input);
+  const listenResponse = listenResult;
 
-  const [listenResult, analyzeResult] = await Promise.allSettled([
-    callDeepgram("listen", listenParams, input),
-    callDeepgram("analyze", analyzeParams, input),
-  ]);
-
-  if (listenResult.status === "rejected") {
-    throw listenResult.reason;
-  }
-
-  const listenResponse = listenResult.value;
-  const analyzeResponse = analyzeResult.status === "fulfilled" ? analyzeResult.value : null;
+  console.log("Raw Deepgram API Response:", JSON.stringify(listenResponse, null, 2));
 
   const utterances = buildUtterances(listenResponse);
   const sentiments = collectSentiments(listenResponse);
@@ -443,7 +419,131 @@ export async function analyzeWithDeepgram(jobId: number, input: DeepgramInput): 
     avg_sentiment: entry.turns ? entry.sentimentSum / entry.turns : 0,
   }));
 
-  const insights = buildInsights(enrichedUtterances, overallSentiment, analyzeResponse || {});
+  const insights = buildInsights(enrichedUtterances, overallSentiment, listenResponse || {});
+
+  // Extract summary from listen response
+  let summary: string | undefined;
+  if (listenResponse) {
+    const summaryObj = listenResponse?.results?.summary;
+    
+    // Only extract the actual summary text, not status fields
+    if (typeof summaryObj?.short === 'string' && summaryObj.short) {
+      summary = summaryObj.short;
+    }
+  }
+
+  // Extract topics from listen response
+  let topics: Array<{ topic: string; confidence: number }> | undefined;
+  let topicSegments: TopicSegment[] | undefined;
+  if (listenResponse) {
+    // Check for topics in the results
+    const topicsData = listenResponse?.results?.topics;
+    
+    if (Array.isArray(topicsData) && topicsData.length > 0) {
+      // If topics is directly an array
+      const allTopics: Array<{ topic: string; confidence: number }> = [];
+      const seenTopics = new Set<string>();
+      
+      for (const t of topicsData) {
+        if (t?.text && typeof t.confidence === 'number' && !seenTopics.has(t.text)) {
+          allTopics.push({
+            topic: t.text,
+            confidence: t.confidence
+          });
+          seenTopics.add(t.text);
+        }
+      }
+      
+      if (allTopics.length > 0) {
+        topics = allTopics.sort((a, b) => b.confidence - a.confidence);
+      }
+    } else if (topicsData && typeof topicsData === 'object') {
+      // Check if topics has a segments structure
+      const segments = topicsData.segments;
+      
+      if (Array.isArray(segments) && segments.length > 0) {
+        const allTopics: Array<{ topic: string; confidence: number }> = [];
+        const allTopicSegments: TopicSegment[] = [];
+        const seenTopics = new Set<string>();
+        
+        for (const segment of segments) {
+          if (Array.isArray(segment.topics)) {
+            for (const t of segment.topics) {
+              if (t?.topic && typeof t.confidence_score === 'number') {
+                // Dedupe for the flat topics list
+                if (!seenTopics.has(t.topic)) {
+                  allTopics.push({ topic: t.topic, confidence: t.confidence_score });
+                  seenTopics.add(t.topic);
+                }
+                // Keep all segment-level entries for transcript matching
+                if (segment.text && typeof segment.start_word === 'number' && typeof segment.end_word === 'number') {
+                  allTopicSegments.push({
+                    text: segment.text,
+                    start_word: segment.start_word,
+                    end_word: segment.end_word,
+                    topic: t.topic,
+                    confidence: t.confidence_score,
+                  });
+                }
+              }
+            }
+          }
+        }
+        
+        if (allTopics.length > 0) {
+          topics = allTopics.sort((a, b) => b.confidence - a.confidence);
+        }
+        if (allTopicSegments.length > 0) {
+          topicSegments = allTopicSegments;
+        }
+      }
+    }
+  }
+
+  // Extract intents from listen response
+  let intents: Array<{ intent: string; confidence: number }> | undefined;
+  let intentSegments: IntentSegment[] | undefined;
+  if (listenResponse) {
+    // Navigate to intents segments (same level as topics)
+    const segments = listenResponse?.results?.intents?.segments;
+    
+    if (Array.isArray(segments) && segments.length > 0) {
+      const allIntents: Array<{ intent: string; confidence: number }> = [];
+      const allIntentSegments: IntentSegment[] = [];
+      const seenIntents = new Set<string>();
+      
+      for (const segment of segments) {
+        if (Array.isArray(segment.intents)) {
+          for (const i of segment.intents) {
+            if (i?.intent && typeof i.confidence_score === 'number') {
+              // Dedupe for the flat intents list
+              if (!seenIntents.has(i.intent)) {
+                allIntents.push({ intent: i.intent, confidence: i.confidence_score });
+                seenIntents.add(i.intent);
+              }
+              // Keep all segment-level entries for matching
+              if (segment.text && typeof segment.start_word === 'number' && typeof segment.end_word === 'number') {
+                allIntentSegments.push({
+                  text: segment.text,
+                  start_word: segment.start_word,
+                  end_word: segment.end_word,
+                  intent: i.intent,
+                  confidence: i.confidence_score,
+                });
+              }
+            }
+          }
+        }
+      }
+      
+      if (allIntents.length > 0) {
+        intents = allIntents.sort((a, b) => b.confidence - a.confidence);
+      }
+      if (allIntentSegments.length > 0) {
+        intentSegments = allIntentSegments;
+      }
+    }
+  }
 
   return {
     jobId,
@@ -452,6 +552,11 @@ export async function analyzeWithDeepgram(jobId: number, input: DeepgramInput): 
     speakerStats,
     overallSentiment,
     conflictHeatmap,
+    summary,
+    topics,
+    intents,
+    topicSegments,
+    intentSegments,
   };
 }
 

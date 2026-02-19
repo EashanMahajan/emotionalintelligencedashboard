@@ -19,6 +19,28 @@ export const speakerStatsSchema = z.object({
   turn_count: z.number(),
   avg_sentiment: z.number(),
 });
+export const topicSchema = z.object({
+  topic: z.string(),
+  confidence: z.number(),
+});
+export const intentSchema = z.object({
+  intent: z.string(),
+  confidence: z.number(),
+});
+export const topicSegmentSchema = z.object({
+  text: z.string(),
+  start_word: z.number(),
+  end_word: z.number(),
+  topic: z.string(),
+  confidence: z.number(),
+});
+export const intentSegmentSchema = z.object({
+  text: z.string(),
+  start_word: z.number(),
+  end_word: z.number(),
+  intent: z.string(),
+  confidence: z.number(),
+});
 export const analysisResultSchema = z.object({
   jobId: z.number(),
   utterances: z.array(utteranceSchema),
@@ -36,6 +58,11 @@ export const analysisResultSchema = z.object({
       intensity: z.number(),
     })
   ),
+  summary: z.string().optional(),
+  topics: z.array(topicSchema).optional(),
+  intents: z.array(intentSchema).optional(),
+  topicSegments: z.array(topicSegmentSchema).optional(),
+  intentSegments: z.array(intentSegmentSchema).optional(),
 });
 export const analysisJobSchema = z.object({
   id: z.number(),
@@ -48,4 +75,8 @@ export const analysisJobSchema = z.object({
 export type AnalysisJob = z.infer<typeof analysisJobSchema>;
 export type Utterance = z.infer<typeof utteranceSchema>;
 export type Insight = z.infer<typeof insightSchema>;
+export type Topic = z.infer<typeof topicSchema>;
+export type Intent = z.infer<typeof intentSchema>;
+export type TopicSegment = z.infer<typeof topicSegmentSchema>;
+export type IntentSegment = z.infer<typeof intentSegmentSchema>;
 export type AnalysisResult = z.infer<typeof analysisResultSchema>;

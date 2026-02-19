@@ -5,6 +5,8 @@ import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import { analyzeWithDeepgram } from "./deepgram";
+import { buildSystemPrompt, streamChat, type ChatMessage } from "./gemini";
+import type { AnalysisResult } from "@shared/schema";
 
 const ALLOWED_MIMES = [
   "audio/mpeg", "audio/mp3", "audio/mp4", "audio/x-m4a", "audio/wav",
@@ -91,6 +93,42 @@ export async function registerRoutes(
   if (!latest) return res.status(404).json({ message: "No jobs yet" });
   res.json(latest);
 });
+
+  app.post("/api/chat", async (req, res) => {
+    if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === "your_gemini_api_key_here") {
+      return res.status(503).json({ message: "Gemini API key not configured. Add GEMINI_API_KEY to your .env file." });
+    }
+    try {
+      const { messages, context } = req.body as {
+        messages: ChatMessage[];
+        context: AnalysisResult;
+      };
+      if (!messages || !context) {
+        return res.status(400).json({ message: "messages and context are required" });
+      }
+      const userMessage = messages[messages.length - 1]?.content;
+      if (!userMessage) return res.status(400).json({ message: "No user message provided" });
+      const history = messages.slice(0, -1);
+      const systemPrompt = buildSystemPrompt(context);
+
+      res.setHeader("Content-Type", "text/plain; charset=utf-8");
+      res.setHeader("Transfer-Encoding", "chunked");
+      res.setHeader("Cache-Control", "no-cache");
+      res.flushHeaders();
+
+      await streamChat(systemPrompt, history, userMessage, (chunk) => {
+        res.write(chunk);
+      });
+      res.end();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Chat failed";
+      if (!res.headersSent) {
+        res.status(500).json({ message });
+      } else {
+        res.end();
+      }
+    }
+  });
 
   return httpServer;
 }

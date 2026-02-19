@@ -3,6 +3,7 @@ import { api, buildUrl } from "@shared/routes";
 import { AnalysisJob, AnalysisResult } from "@shared/schema";
 import { createLocalJob, getLocalJob, listLocalJobs, updateLocalJobStatus } from "@/lib/local-jobs";
 import { analyzeAudioFile } from "@/lib/deepgram";
+import { saveAudioFile } from "@/lib/audio-storage";
 
 // Helper to fetch jobs
 async function fetchJobs() {
@@ -47,6 +48,8 @@ export function useUploadJob() {
   return useMutation({
     mutationFn: async (file: File) => {
       const job = await createLocalJob(file.name);
+      // Persist audio for playback (best-effort — don't block analysis if it fails)
+      saveAudioFile(job.id, file).catch(() => {});
       await updateLocalJobStatus(job.id, "processing");
       try {
         const results = await analyzeAudioFile(file, job.id);
