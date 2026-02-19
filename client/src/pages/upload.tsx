@@ -40,10 +40,18 @@ export default function UploadPage() {
     onDragEnter: () => setIsDragActive(true),
     onDragLeave: () => setIsDragActive(false),
     accept: {
-      'audio/*': ['.mp3', '.wav', '.m4a'],
-      'video/*': ['.mp4', '.mov'] // Often users upload video for audio analysis
+      'audio/mpeg': ['.mp3'],
+      'audio/wav': ['.wav'],
+      'audio/wave': ['.wav'],
+      'audio/x-wav': ['.wav'],
+      'audio/mp4': ['.m4a'],
+      'audio/x-m4a': ['.m4a'],
+      'audio/*': ['.mp3', '.wav', '.m4a', '.aac', '.ogg'],
+      'video/mp4': ['.mp4'],
+      'video/quicktime': ['.mov'],
     },
     maxFiles: 1,
+    maxSize: 50 * 1024 * 1024, // 50MB
     multiple: false
   });
 

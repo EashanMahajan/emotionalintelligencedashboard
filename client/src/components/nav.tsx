@@ -1,10 +1,8 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { useLatestJob } from "@/hooks/use-latest-job";
 
 export default function Nav() {
   const [location, setLocation] = useLocation();
-  const { data: latestJob } = useLatestJob(); // ← THIS WAS MISSING
 
   const go = (path: string) => () => setLocation(path);
 
@@ -17,13 +15,8 @@ export default function Nav() {
 
         <div className="flex gap-2">
           <Button
-            variant={location.startsWith("/results") ? "default" : "outline"}
-            disabled={!latestJob?.id}
-            onClick={() => {
-              if (latestJob?.id) {
-                setLocation(`/results/${latestJob.id}`);
-              }
-            }}
+            variant={location === "/dashboard" || location.startsWith("/results") ? "default" : "outline"}
+            onClick={go("/dashboard")}
           >
             Dashboard
           </Button>

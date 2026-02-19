@@ -1,6 +1,6 @@
 import { db } from "./db";
 import { analysisJobs, type AnalysisJob, type InsertAnalysisJob } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 
 export interface IStorage {
   createJob(filename: string): Promise<AnalysisJob>;
@@ -23,7 +23,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async listJobs(): Promise<AnalysisJob[]> {
-    return await db.select().from(analysisJobs).orderBy(analysisJobs.createdAt);
+    return await db.select().from(analysisJobs).orderBy(desc(analysisJobs.createdAt));
   }
 
   async updateJobStatus(id: number, status: string, results?: any): Promise<AnalysisJob> {

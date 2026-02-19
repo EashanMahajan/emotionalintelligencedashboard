@@ -1,27 +1,57 @@
 import type { Express } from "express";
 import type { Server } from "http";
+import multer from "multer";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
+
+// Accept audio/video formats for transcription analysis
+const ALLOWED_MIMES = [
+  "audio/mpeg", "audio/mp3", "audio/mp4", "audio/x-m4a", "audio/wav",
+  "audio/wave", "audio/x-wav", "audio/m4a", "audio/aac", "audio/ogg",
+  "video/mp4", "video/quicktime",
+];
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
+  fileFilter: (_req, file, cb) => {
+    const mime = file.mimetype.toLowerCase();
+    const isAudio = mime.startsWith("audio/");
+    const isVideo = mime.startsWith("video/");
+    if (isAudio || isVideo || ALLOWED_MIMES.includes(mime)) {
+      cb(null, true);
+    } else {
+      cb(new Error(`File type ${file.mimetype} not supported. Use MP3, WAV, M4A, MP4, or MOV.`));
+    }
+  },
+});
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
   
-  // Upload endpoint - Mocking the file upload for now
-  app.post(api.jobs.upload.path, async (req, res) => {
-    // In a real app, we'd handle multer/multipart here
-    // For this MVP, we just create a job entry
-    const job = await storage.createJob("conversation_recording.mp3");
-    
-    // Simulate background processing
-    mockProcessJob(job.id);
-    
-    res.status(201).json({
-      jobId: job.id,
-      status: job.status
-    });
+  // Upload endpoint - parses multipart file, creates job
+  app.post(api.jobs.upload.path, upload.single("file"), async (req, res, next) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file provided. Please upload an audio or video file (MP3, WAV, M4A, MP4, MOV)." });
+      }
+      const filename = req.file.originalname;
+      const job = await storage.createJob(filename);
+      
+      // Simulate background processing (file in memory but not persisted for mock)
+      mockProcessJob(job.id);
+      
+      res.status(201).json({
+        jobId: job.id,
+        status: job.status
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Upload failed";
+      res.status(400).json({ message });
+    }
   });
 
   app.get(api.jobs.get.path, async (req, res) => {
