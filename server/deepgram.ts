@@ -49,7 +49,7 @@ async function callDeepgram(path: "listen" | "analyze", params: URLSearchParams,
       Authorization: `Token ${apiKey}`,
       "Content-Type": input.mimetype || "application/octet-stream",
     },
-    body: input.buffer,
+    body: input.buffer as unknown as BodyInit,
   });
 
   if (!res.ok) {
