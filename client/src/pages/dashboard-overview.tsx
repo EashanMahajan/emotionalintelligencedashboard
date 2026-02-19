@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useJobs } from "@/hooks/use-jobs";
 import { format, formatDistanceToNow } from "date-fns";
@@ -70,7 +71,19 @@ const item = {
 
 export default function DashboardOverview() {
   const [, setLocation] = useLocation();
-  const { data: jobs, isLoading } = useJobs();
+  const { data: jobs, isLoading, refetch } = useJobs();
+  const [aiReportTick, setAiReportTick] = useState(0);
+
+  // Force a fresh read from localStorage every time this page is visited
+  useEffect(() => {
+    refetch();
+  }, []);
+
+  useEffect(() => {
+    const handler = () => setAiReportTick(t => t + 1);
+    window.addEventListener('ai-report-saved', handler);
+    return () => window.removeEventListener('ai-report-saved', handler);
+  }, []);
 
   const total = jobs?.length ?? 0;
   const completed = jobs?.filter((j) => j.status === "completed").length ?? 0;
@@ -106,7 +119,7 @@ export default function DashboardOverview() {
       {/* Hero */}
       <div className="relative overflow-hidden border-b border-border/60 bg-gradient-to-br from-background via-background to-primary/5">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,hsl(var(--primary)/0.12),transparent)]" />
-        <div className="relative container mx-auto px-6 py-12 max-w-5xl">
+        <div className="relative container mx-auto px-6 py-8 max-w-5xl">
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
             <div className="flex items-center gap-2 mb-3">
               <span className="text-xs font-medium text-muted-foreground uppercase tracking-widest">
@@ -117,7 +130,7 @@ export default function DashboardOverview() {
             <p className="text-muted-foreground mt-2 text-base max-w-lg">
               Your emotional intelligence hub. Analyse tone, sentiment, and conversational dynamics from any audio.
             </p>
-            <div className="mt-6 flex gap-3">
+            <div className="mt-5 flex gap-3">
               <Button onClick={() => setLocation("/upload")} className="gap-2">
                 <UploadCloud className="w-4 h-4" />
                 New Analysis
@@ -133,10 +146,10 @@ export default function DashboardOverview() {
         </div>
       </div>
 
-      <div className="container mx-auto px-6 py-10 max-w-5xl space-y-10">
+      {/* Main content */}
+      <div className="container mx-auto px-6 py-6 max-w-5xl space-y-6">
         {/* Stats row */}
         <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-          {/* Uploads */}
           <motion.div variants={item} className="col-span-1 bg-card border border-border rounded-xl p-4 flex flex-col gap-3">
             <div className="bg-primary/10 rounded-lg p-2 w-fit">
               <FileAudio className="w-4 h-4 text-primary" />
@@ -146,8 +159,6 @@ export default function DashboardOverview() {
               <p className="text-xs text-muted-foreground mt-0.5">Total Uploads</p>
             </div>
           </motion.div>
-
-          {/* Completed */}
           <motion.div variants={item} className="col-span-1 bg-card border border-border rounded-xl p-4 flex flex-col gap-3">
             <div className="bg-emerald-500/10 rounded-lg p-2 w-fit">
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
@@ -157,8 +168,6 @@ export default function DashboardOverview() {
               <p className="text-xs text-muted-foreground mt-0.5">Completed</p>
             </div>
           </motion.div>
-
-          {/* Insights Found */}
           <motion.div variants={item} className="col-span-1 bg-card border border-border rounded-xl p-4 flex flex-col gap-3">
             <div className="bg-amber-500/10 rounded-lg p-2 w-fit">
               <Zap className="w-4 h-4 text-amber-400" />
@@ -168,8 +177,6 @@ export default function DashboardOverview() {
               <p className="text-xs text-muted-foreground mt-0.5">Insights Found</p>
             </div>
           </motion.div>
-
-          {/* Total Turns */}
           <motion.div variants={item} className="col-span-1 bg-card border border-border rounded-xl p-4 flex flex-col gap-3">
             <div className="bg-blue-500/10 rounded-lg p-2 w-fit">
               <BarChart2 className="w-4 h-4 text-blue-400" />
@@ -179,8 +186,6 @@ export default function DashboardOverview() {
               <p className="text-xs text-muted-foreground mt-0.5">Turns Analysed</p>
             </div>
           </motion.div>
-
-          {/* Avg Sentiment */}
           <motion.div variants={item} className="col-span-1 bg-card border border-border rounded-xl p-4 flex flex-col gap-3">
             <div className="bg-teal-500/10 rounded-lg p-2 w-fit">
               <TrendingUp className="w-4 h-4 text-teal-400" />
@@ -212,22 +217,24 @@ export default function DashboardOverview() {
           {recentJobs.length === 0 ? (
             <motion.div
               initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-              className="text-center py-20 bg-muted/10 rounded-2xl border border-dashed border-border"
+              className="flex items-center justify-between bg-muted/10 rounded-2xl border border-dashed border-border px-6 py-5"
             >
-              <div className="bg-muted rounded-full w-14 h-14 flex items-center justify-center mx-auto mb-4">
-                <FileAudio className="w-7 h-7 text-muted-foreground" />
+              <div className="flex items-center gap-3">
+                <div className="bg-muted rounded-lg p-2">
+                  <FileAudio className="w-5 h-5 text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">No analyses yet</p>
+                  <p className="text-xs text-muted-foreground">Upload an audio file to get started</p>
+                </div>
               </div>
-              <h3 className="text-base font-medium mb-1">No analyses yet</h3>
-              <p className="text-sm text-muted-foreground mb-6 max-w-xs mx-auto">
-                Upload an audio file to start uncovering emotional patterns in conversations.
-              </p>
-              <Button onClick={() => setLocation("/upload")}>
-                <UploadCloud className="w-4 h-4 mr-2" />
-                Upload File
+              <Button onClick={() => setLocation("/upload")} size="sm" className="gap-2 shrink-0">
+                <UploadCloud className="w-3.5 h-3.5" />
+                Upload your first file
               </Button>
             </motion.div>
           ) : (
-            <motion.div variants={container} initial="hidden" animate="show" className="space-y-3">
+            <div className="space-y-3">
               {recentJobs.map((job) => {
                 const sc = statusConfig(job.status);
                 const StatusIcon = sc.icon;
@@ -239,7 +246,9 @@ export default function DashboardOverview() {
                 return (
                   <motion.div
                     key={job.id}
-                    variants={item}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.25 }}
                     onClick={() => job.status === "completed" ? setLocation(`/results/${job.id}`) : undefined}
                     className={cn(
                       "group bg-card border border-border rounded-xl p-4 transition-all duration-200",
@@ -249,12 +258,9 @@ export default function DashboardOverview() {
                     )}
                   >
                     <div className="flex items-start gap-4">
-                      {/* Icon */}
                       <div className={cn("p-2.5 rounded-lg shrink-0 mt-0.5", sc.bg)}>
                         <StatusIcon className={cn("w-5 h-5", sc.iconColor, job.status !== "completed" && job.status !== "failed" && "animate-spin")} />
                       </div>
-
-                      {/* Main content */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
@@ -284,8 +290,6 @@ export default function DashboardOverview() {
                             )}
                           </div>
                         </div>
-
-                        {/* Meta row */}
                         {job.status === "completed" && (
                           <div className="mt-3 flex items-center gap-4">
                             {speakers.length > 0 && (
@@ -318,7 +322,7 @@ export default function DashboardOverview() {
                   </motion.div>
                 );
               })}
-            </motion.div>
+            </div>
           )}
         </div>
       </div>

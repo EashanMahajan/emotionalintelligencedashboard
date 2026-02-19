@@ -21,6 +21,8 @@ export function useJobs() {
   return useQuery({
     queryKey: [api.jobs.list.path],
     queryFn: fetchJobs,
+    staleTime: 0,
+    refetchOnMount: true,
   });
 }
 

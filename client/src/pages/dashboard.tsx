@@ -62,7 +62,10 @@ export default function Dashboard() {
   // Persist report to sessionStorage whenever it changes
   useEffect(() => {
     if (!aiReport) return;
-    try { sessionStorage.setItem(storageKey, aiReport); } catch {}
+    try {
+      sessionStorage.setItem(storageKey, aiReport);
+      window.dispatchEvent(new CustomEvent('ai-report-saved'));
+    } catch {}
   }, [aiReport, storageKey]);
 
   async function generateAiReport() {
