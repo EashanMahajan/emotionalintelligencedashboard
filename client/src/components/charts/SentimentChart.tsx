@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, ReferenceLine } from 'recharts';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 
@@ -9,6 +9,11 @@ interface SentimentChartProps {
 }
 
 export function SentimentChart({ data, onPointClick }: SentimentChartProps) {
+  const avgSentiment = useMemo(() => {
+    if (!data.length) return 0;
+    return data.reduce((sum, p) => sum + p.score, 0) / data.length;
+  }, [data]);
+
   const chartData = useMemo(() => {
     return data.map(point => ({
       ...point,
@@ -38,9 +43,13 @@ export function SentimentChart({ data, onPointClick }: SentimentChartProps) {
     >
       <div className="flex justify-between items-center mb-4">
         <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider">Sentiment Trend</h3>
-        <div className="flex gap-2 text-xs">
+        <div className="flex gap-2 text-xs items-center">
           <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> Positive</span>
           <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-rose-500"></div> Negative</span>
+          <span className="flex items-center gap-1 text-muted-foreground">
+            <div className="w-4 border-t border-dashed border-amber-400" />
+            Avg ({avgSentiment >= 0 ? '+' : ''}{avgSentiment.toFixed(2)})
+          </span>
         </div>
       </div>
       
@@ -89,6 +98,13 @@ export function SentimentChart({ data, onPointClick }: SentimentChartProps) {
             }}
             cursor={{ stroke: 'hsl(var(--foreground))', strokeWidth: 1, strokeDasharray: '4 4' }}
             formatter={(value: number, name: string) => [Number.isFinite(value) ? value.toFixed(2) : value, name]}
+          />
+          <ReferenceLine
+            y={avgSentiment}
+            stroke="#f59e0b"
+            strokeWidth={1.5}
+            strokeDasharray="5 4"
+            label={{ value: `avg`, position: 'insideTopRight', fontSize: 9, fill: '#f59e0b' }}
           />
           <Area 
             type="monotone" 

@@ -2,10 +2,9 @@ import { useState, useRef, useEffect } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useJob } from "@/hooks/use-jobs";
 import { AnalysisResult } from "@shared/schema";
-import { ResonanceLogo } from "@/components/ResonanceLogo";
 import {
   Loader2, AlertCircle, UploadCloud, ChevronLeft, Download,
-  Clock, Users, MessageSquare, TrendingUp, Zap, Headphones, FileText, Sparkles
+  Clock, Users, MessageSquare, TrendingUp, Zap, Headphones, FileText, Sparkles, FileAudio
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -49,6 +48,7 @@ export default function Dashboard() {
   const { data: job, isLoading, error } = useJob(id);
   const [activeTimestamp, setActiveTimestamp] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<string>("text");
+  const [showAllInsights, setShowAllInsights] = useState(false);
 
   const storageKey = `ai-report-${id}`;
   const [aiSummaryState, setAiSummaryState] = useState<AISummaryState>(() => {
@@ -206,147 +206,123 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="border-b border-border/40 bg-background/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="shrink-0" onClick={() => setLocation("/upload")}>
-              <ChevronLeft className="w-5 h-5" />
-            </Button>
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                <ResonanceLogo className="w-4 h-4 text-primary" />
-              </div>
-              <div>
-                <h1 className="text-sm font-bold tracking-tight leading-none">{job.filename}</h1>
-                <p className="text-xs text-muted-foreground mt-0.5">Analysis Complete</p>
-              </div>
+      <header className="border-b border-border/40 bg-background/95 backdrop-blur-md sticky top-0 z-50">
+        <div className="container mx-auto px-4 h-14 flex items-center gap-3">
+          {/* Left: back + file info — grows to fill available space */}
+          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground" onClick={() => setLocation("/upload")}>
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+          <div className="w-px h-5 bg-border/50 shrink-0" />
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <FileAudio className="w-4 h-4 text-primary shrink-0" />
+            <div className="flex flex-col min-w-0">
+              <span className="text-sm font-semibold leading-tight truncate">{job.filename}</span>
+              <span className="text-[10px] text-muted-foreground leading-tight">Analysis Complete</span>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="hidden sm:flex gap-1.5 text-xs font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Ready
-            </Badge>
+
+          {/* Stats + Actions — single unified right block with consistent dividers */}
+          <div className="hidden lg:flex items-center gap-0 shrink-0">
+            <div className="w-px h-5 bg-border/50" />
+            <div className="flex items-center gap-1 px-3 text-xs">
+              <Clock className="w-3 h-3 text-cyan-400 shrink-0" />
+              <span className="tabular-nums text-muted-foreground">{formatDuration(durationMs)}</span>
+            </div>
+            <div className="w-px h-3.5 bg-border/50" />
+            <div className="flex items-center gap-1 px-3 text-xs">
+              <Users className="w-3 h-3 text-violet-400 shrink-0" />
+              <span className="text-muted-foreground">{speakerCount} {speakerCount === 1 ? "speaker" : "speakers"}</span>
+            </div>
+            <div className="w-px h-3.5 bg-border/50" />
+            <div className="flex items-center gap-1 px-3 text-xs">
+              <MessageSquare className="w-3 h-3 text-emerald-400 shrink-0" />
+              <span className="text-muted-foreground">{results.utterances.length} turns</span>
+            </div>
+            <div className="w-px h-3.5 bg-border/50" />
+            <div className="flex items-center gap-1 px-3 text-xs">
+              <TrendingUp className={cn("w-3 h-3 shrink-0", sentimentInfo.color)} />
+              <span className={cn(sentimentInfo.color)}>{sentimentInfo.label}</span>
+            </div>
+            {results.insights.length > 0 && (
+              <>
+                <div className="w-px h-3.5 bg-border/50" />
+                <div className="flex items-center gap-1 px-3 text-xs">
+                  <Zap className="w-3 h-3 text-orange-400 shrink-0" />
+                  <span className="text-muted-foreground">{results.insights.length} {results.insights.length === 1 ? "insight" : "insights"}</span>
+                </div>
+              </>
+            )}
+            <div className="w-px h-5 bg-border/50 mx-1" />
             {aiSummaryState === "done" && (
-              <Badge className="hidden sm:flex gap-1.5 text-xs font-medium bg-violet-500/15 text-violet-400 border border-violet-500/20 hover:bg-violet-500/20">
+              <Badge className="mr-2 gap-1.5 text-xs font-medium bg-violet-500/10 text-violet-400 border border-violet-500/20">
                 <Sparkles className="w-3 h-3" />
                 AI Report
               </Badge>
             )}
-            <Button variant="outline" size="sm" onClick={handleDownloadCSV}>
-              <Download className="w-4 h-4 mr-2" />
-              Export CSV
+            <Button variant="ghost" size="sm" className="h-8 text-xs text-muted-foreground hover:text-foreground" onClick={handleDownloadCSV}>
+              <Download className="w-3.5 h-3.5 mr-1.5" />
+              Export
             </Button>
-            <Button size="sm" onClick={() => setLocation("/upload")}>
-              <UploadCloud className="w-4 h-4 mr-2" />
+            <Button size="sm" className="h-8 text-xs ml-1" onClick={() => setLocation("/upload")}>
+              <UploadCloud className="w-3.5 h-3.5 mr-1.5" />
+              New Analysis
+            </Button>
+          </div>
+
+          {/* Actions — mobile only */}
+          <div className="flex lg:hidden items-center gap-2 shrink-0">
+            {aiSummaryState === "done" && (
+              <Badge className="hidden sm:flex gap-1.5 text-xs font-medium bg-violet-500/10 text-violet-400 border border-violet-500/20">
+                <Sparkles className="w-3 h-3" />
+                AI Report
+              </Badge>
+            )}
+            <Button variant="ghost" size="sm" className="h-8 text-xs text-muted-foreground hover:text-foreground" onClick={handleDownloadCSV}>
+              <Download className="w-3.5 h-3.5 mr-1.5" />
+              Export
+            </Button>
+            <Button size="sm" className="h-8 text-xs" onClick={() => setLocation("/upload")}>
+              <UploadCloud className="w-3.5 h-3.5 mr-1.5" />
               New Analysis
             </Button>
           </div>
         </div>
       </header>
 
-      {/* Stats bar */}
-      <div className="border-b border-border/30 bg-muted/20">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex flex-wrap items-center gap-6">
-            <motion.div
-              initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-              className="flex items-center gap-2 text-sm"
-            >
-              <div className="w-7 h-7 rounded-md bg-sky-500/10 flex items-center justify-center">
-                <Clock className="w-3.5 h-3.5 text-sky-500" />
-              </div>
-              <div>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wide leading-none mb-0.5">Duration</p>
-                <p className="font-semibold tabular-nums">{formatDuration(durationMs)}</p>
-              </div>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-              className="flex items-center gap-2 text-sm"
-            >
-              <div className="w-7 h-7 rounded-md bg-violet-500/10 flex items-center justify-center">
-                <Users className="w-3.5 h-3.5 text-violet-500" />
-              </div>
-              <div>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wide leading-none mb-0.5">Speakers</p>
-                <p className="font-semibold">{speakerCount}</p>
-              </div>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-              className="flex items-center gap-2 text-sm"
-            >
-              <div className="w-7 h-7 rounded-md bg-amber-500/10 flex items-center justify-center">
-                <MessageSquare className="w-3.5 h-3.5 text-amber-500" />
-              </div>
-              <div>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wide leading-none mb-0.5">Turns</p>
-                <p className="font-semibold">{results.utterances.length}</p>
-              </div>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-              className="flex items-center gap-2 text-sm"
-            >
-              <div className={cn("w-7 h-7 rounded-md flex items-center justify-center", sentimentInfo.bg)}>
-                <TrendingUp className={cn("w-3.5 h-3.5", sentimentInfo.color)} />
-              </div>
-              <div>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wide leading-none mb-0.5">Avg Tone</p>
-                <p className={cn("font-semibold", sentimentInfo.color)}>{sentimentInfo.label}</p>
-              </div>
-            </motion.div>
-            {results.insights.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
-                className="flex items-center gap-2 text-sm"
-              >
-                <div className="w-7 h-7 rounded-md bg-rose-500/10 flex items-center justify-center">
-                  <Zap className="w-3.5 h-3.5 text-rose-500" />
-                </div>
-                <div>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide leading-none mb-0.5">Insights</p>
-                  <p className="font-semibold">{results.insights.length}</p>
-                </div>
-              </motion.div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <main className="flex-1 container mx-auto px-4 py-6 overflow-hidden h-[calc(100vh-120px)]">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
+      <main className="flex-1 container mx-auto px-4 pb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left column */}
-          <div className={cn(activeTab === "speakers" || activeTab === "ai" ? "lg:col-span-12" : "lg:col-span-8", "flex flex-col gap-5 h-full overflow-hidden")}>
+          <div className={cn(activeTab === "speakers" || activeTab === "ai" ? "lg:col-span-12" : "lg:col-span-8", "flex flex-col gap-5")}>
             <motion.div
               initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
             >
-              <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="grid w-full grid-cols-5 max-w-2xl">
-                  <TabsTrigger value="text" className="gap-1.5">
-                    <FileText className="w-3.5 h-3.5" />
-                    Overview
-                  </TabsTrigger>
-                  <TabsTrigger value="sentiment" className="gap-1.5">
-                    <TrendingUp className="w-3.5 h-3.5" />
-                    Sentiment
-                  </TabsTrigger>
-                  <TabsTrigger value="playback" className="gap-1.5">
-                    <Headphones className="w-3.5 h-3.5" />
-                    Playback
-                  </TabsTrigger>
-                  <TabsTrigger value="speakers" className="gap-1.5">
-                    <Users className="w-3.5 h-3.5" />
-                    Speakers
-                  </TabsTrigger>
-                  <TabsTrigger value="ai" className="gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    AI Report
-                  </TabsTrigger>
-                </TabsList>
+              <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); const headerHeight = 56; window.scrollTo({ top: window.scrollY >= headerHeight ? headerHeight : 0, behavior: 'instant' }); }}>
+                <div className="sticky top-14 z-40 bg-background/95 backdrop-blur-md -mx-4 px-4">
+                  <TabsList className="flex w-full max-w-2xl h-auto bg-transparent p-0 border-b border-border/40 rounded-none gap-0">
+                    <TabsTrigger value="text" className="gap-1.5 rounded-none bg-transparent px-4 pb-2.5 pt-2.5 text-sm font-medium text-muted-foreground shadow-none data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:-mb-px transition-colors hover:text-foreground">
+                      <FileText className="w-3.5 h-3.5" />
+                      Overview
+                    </TabsTrigger>
+                    <TabsTrigger value="sentiment" className="gap-1.5 rounded-none bg-transparent px-4 pb-2.5 pt-2.5 text-sm font-medium text-muted-foreground shadow-none data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:-mb-px transition-colors hover:text-foreground">
+                      <TrendingUp className="w-3.5 h-3.5" />
+                      Sentiment
+                    </TabsTrigger>
+                    <TabsTrigger value="playback" className="gap-1.5 rounded-none bg-transparent px-4 pb-2.5 pt-2.5 text-sm font-medium text-muted-foreground shadow-none data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:-mb-px transition-colors hover:text-foreground">
+                      <Headphones className="w-3.5 h-3.5" />
+                      Playback
+                    </TabsTrigger>
+                    <TabsTrigger value="speakers" className="gap-1.5 rounded-none bg-transparent px-4 pb-2.5 pt-2.5 text-sm font-medium text-muted-foreground shadow-none data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:-mb-px transition-colors hover:text-foreground">
+                      <Users className="w-3.5 h-3.5" />
+                      Speakers
+                    </TabsTrigger>
+                    <TabsTrigger value="ai" className="gap-1.5 rounded-none bg-transparent px-4 pb-2.5 pt-2.5 text-sm font-medium text-muted-foreground shadow-none data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:-mb-px transition-colors hover:text-foreground">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      AI Report
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
               
-                <TabsContent value="text" className="space-y-4 mt-4">
+                <TabsContent value="text" className="space-y-4">
                   {results?.summary && <SummaryCard summary={results.summary} />}
                   {results?.topics && results.topics.length > 0 && <TopicsCard topics={results.topics} />}
                   {results?.intents && results.intents.length > 0 && <IntentsCard intents={results.intents} />}
@@ -357,16 +333,16 @@ export default function Dashboard() {
                   )}
                 </TabsContent>
               
-                <TabsContent value="sentiment" className="space-y-4 mt-4">
+                <TabsContent value="sentiment" className="space-y-4">
                   <SentimentViewer data={results.overallSentiment} utterances={results.utterances} onPointClick={handleJumpToTimestamp} />
                   <ConflictHeatmap utterances={results.utterances} onBinClick={handleJumpToTimestamp} />
                 </TabsContent>
 
-                <TabsContent value="playback" className="mt-4 overflow-y-auto max-h-[calc(100vh-260px)] pr-1">
+                <TabsContent value="playback" className="">
                   <PlaybackTab ref={playbackRef} jobId={job.id} filename={job.filename} utterances={results.utterances} insights={results.insights} />
                 </TabsContent>
 
-                <TabsContent value="speakers" className="overflow-y-auto max-h-[calc(100vh-220px)] pr-1">
+                <TabsContent value="speakers" className="">
                   <SpeakerAnalysisTab
                     utterances={results.utterances}
                     speakerStats={results.speakerStats}
@@ -378,7 +354,7 @@ export default function Dashboard() {
                   />
                 </TabsContent>
 
-                <TabsContent value="ai" className="overflow-y-auto max-h-[calc(100vh-220px)] pr-1 mt-4">
+                <TabsContent value="ai" className="">
                   <AISummaryTab
                     context={results}
                     state={aiSummaryState}
@@ -396,6 +372,7 @@ export default function Dashboard() {
                 className="h-[380px] min-h-0 flex-shrink-0"
               >
                 <Transcript 
+                  key={activeTab}
                   utterances={results.utterances}
                   mode={activeTab === 'text' ? 'text-breakdown' : 'analysis'}
                   topicSegments={activeTab === 'text' ? results.topicSegments : undefined}
@@ -409,7 +386,7 @@ export default function Dashboard() {
 
           {/* Right column */}
           {activeTab !== "speakers" && activeTab !== "ai" && (
-          <div className="lg:col-span-4 flex flex-col gap-5 h-full overflow-y-auto pr-1 pb-6">
+          <div className="lg:col-span-4 flex flex-col gap-5 pt-6 pb-6">
             <motion.div
               initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 }}
               className="space-y-3"
@@ -422,7 +399,7 @@ export default function Dashboard() {
                 <Badge className="text-xs">{results.insights.length} found</Badge>
               </div>
               <div className="space-y-2.5">
-                {results.insights.map((insight, idx) => (
+                {(showAllInsights ? results.insights : results.insights.slice(0, 4)).map((insight, idx) => (
                   <motion.div
                     key={idx}
                     initial={{ opacity: 0, x: 12 }}
@@ -436,6 +413,14 @@ export default function Dashboard() {
                   </motion.div>
                 ))}
               </div>
+              {results.insights.length > 4 && (
+                <button
+                  onClick={() => setShowAllInsights(v => !v)}
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors w-full text-left pt-1"
+                >
+                  {showAllInsights ? "Show less" : `Show ${results.insights.length - 4} more`}
+                </button>
+              )}
             </motion.div>
 
             <motion.div

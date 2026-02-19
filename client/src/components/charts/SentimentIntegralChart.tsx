@@ -60,7 +60,7 @@ export function SentimentIntegralChart({ data, onPointClick }: SentimentIntegral
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="w-full h-[220px] bg-background rounded-xl p-4 border border-border/50 shadow-sm"
+      className="w-full h-[250px] bg-background rounded-xl p-4 border border-border/50 shadow-sm"
     >
       <div className="flex justify-between items-start mb-3">
         <div className="space-y-0.5">
@@ -71,7 +71,7 @@ export function SentimentIntegralChart({ data, onPointClick }: SentimentIntegral
         </div>
       </div>
 
-      <ResponsiveContainer width="100%" height="82%">
+      <ResponsiveContainer width="100%" height="85%">
         <AreaChart
           data={chartData}
           margin={{ top: 10, right: 10, left: -20, bottom: 0 }}

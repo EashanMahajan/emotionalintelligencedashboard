@@ -208,7 +208,7 @@ export function SentimentViewer({ data, onPointClick, utterances = [] }: Sentime
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={goPrev} aria-label="Previous sentiment view">
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={goPrev} aria-label="Previous sentiment view">
             <ChevronLeft className="w-4 h-4" />
           </Button>
           <div className="flex items-center gap-1 rounded-lg border border-border/50 bg-background p-1">
@@ -224,7 +224,7 @@ export function SentimentViewer({ data, onPointClick, utterances = [] }: Sentime
               </Button>
             ))}
           </div>
-          <Button variant="outline" size="icon" onClick={goNext} aria-label="Next sentiment view">
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={goNext} aria-label="Next sentiment view">
             <ChevronRight className="w-4 h-4" />
           </Button>
         </div>

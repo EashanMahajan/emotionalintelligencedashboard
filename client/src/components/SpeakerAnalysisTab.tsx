@@ -12,7 +12,7 @@ import {
 import {
   AreaChart, Area, ResponsiveContainer, Tooltip as ReTooltip,
   XAxis, YAxis, CartesianGrid, RadarChart, PolarGrid,
-  PolarAngleAxis, Radar, BarChart, Bar, Cell
+  PolarAngleAxis, Radar,
 } from "recharts";
 import type { Utterance, Insight, AnalysisResult } from "@shared/schema";
 
@@ -127,26 +127,6 @@ function HintBadge({ children, reason, className }: { children: React.ReactNode;
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
-  );
-}
-
-function TurnTooltip({ active, payload }: { active?: boolean; payload?: Array<{ payload: Record<string, unknown> }> }) {
-  if (!active || !payload?.length) return null;
-  const d = payload[0].payload as {
-    name: string; turns: number; turnPct: number;
-    avgTurnDuration: number; talkPct: number; role: string; idx: number;
-  };
-  const c = SPEAKER_COLORS[d.idx % SPEAKER_COLORS.length];
-  return (
-    <div style={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, padding: "8px 12px", fontSize: 11 }}>
-      <div className={`font-semibold mb-2 ${c.text}`}>{d.name}</div>
-      <div className="space-y-0.5 text-[11px]">
-        <div><span className="text-foreground font-medium">{d.turns} turns</span> <span className="text-muted-foreground">({d.turnPct.toFixed(1)}% of all turns)</span></div>
-        <div><span className="text-foreground font-medium">{fmt(d.avgTurnDuration)}</span> <span className="text-muted-foreground">avg turn length</span></div>
-        <div><span className="text-foreground font-medium">{d.talkPct.toFixed(1)}%</span> <span className="text-muted-foreground">of total talk time</span></div>
-        <div className="pt-1 text-muted-foreground">Role: <span className="text-foreground">{d.role}</span></div>
-      </div>
-    </div>
   );
 }
 
@@ -419,9 +399,9 @@ export function SpeakerAnalysisTab({ utterances, speakerStats, onUtteranceClick 
                               <stop offset="95%" stopColor={c.area} stopOpacity={0.03} />
                             </linearGradient>
                           </defs>
-                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.5} />
                           <XAxis dataKey="i" hide />
-                          <YAxis domain={[-1, 1]} tick={{ fontSize: 9, fill: "rgba(255,255,255,0.3)" }} />
+                          <YAxis domain={[-1, 1]} tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} />
                           <ReTooltip
                             contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 6, fontSize: 11 }}
                             formatter={(val: number) => [val.toFixed(3), "Sentiment"]}
@@ -524,8 +504,8 @@ export function SpeakerAnalysisTab({ utterances, speakerStats, onUtteranceClick 
               <div className="h-[220px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <RadarChart data={radarData} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
-                    <PolarGrid stroke="rgba(255,255,255,0.08)" />
-                    <PolarAngleAxis dataKey="metric" tick={{ fontSize: 10, fill: "rgba(255,255,255,0.5)" }} />
+                    <PolarGrid stroke="hsl(var(--border))" />
+                    <PolarAngleAxis dataKey="metric" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
                     {perSpeaker.map((sp, idx) => (
                       <Radar
                         key={sp.stat.speaker_id}
@@ -577,7 +557,7 @@ export function SpeakerAnalysisTab({ utterances, speakerStats, onUtteranceClick 
         </motion.div>
       )}
 
-      {/* Turn-by-turn breakdown bar chart */}
+      {/* Turn-by-turn breakdown */}
       {perSpeaker.length >= 2 && (
         <motion.div
           initial={{ opacity: 0, y: 14 }}
@@ -590,35 +570,40 @@ export function SpeakerAnalysisTab({ utterances, speakerStats, onUtteranceClick 
                 Turn Distribution
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="h-[130px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={perSpeaker.map((sp, idx) => ({
-                      name: `Speaker ${idx + 1}`,
-                      turns: sp.stat.turn_count,
-                      turnPct: sp.turnPct,
-                      avgTurnDuration: sp.avgTurnDuration,
-                      talkPct: sp.talkPct,
-                      role: sp.role.role,
-                      idx,
-                    }))}
-                    margin={{ top: 4, right: 16, left: -10, bottom: 0 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                    <XAxis dataKey="name" tick={{ fontSize: 10, fill: "rgba(255,255,255,0.4)" }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fontSize: 10, fill: "rgba(255,255,255,0.3)" }} axisLine={false} tickLine={false} />
-                    <ReTooltip
-                      cursor={{ fill: "rgba(255,255,255,0.04)" }}
-                      content={<TurnTooltip />}
+            <CardContent className="space-y-4">
+              {/* Per-speaker bars */}
+              {perSpeaker.map((sp, idx) => {
+                const c = SPEAKER_COLORS[idx % SPEAKER_COLORS.length];
+                return (
+                  <div key={sp.stat.speaker_id}>
+                    <div className="flex justify-between items-baseline mb-1.5">
+                      <span className={`text-xs font-semibold ${c.text}`}>Speaker {idx + 1}</span>
+                      <span className="text-[11px] text-muted-foreground tabular-nums">
+                        {sp.stat.turn_count} turns · {sp.turnPct.toFixed(1)}% · avg {fmt(sp.avgTurnDuration)}
+                      </span>
+                    </div>
+                    <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{ width: `${sp.turnPct}%`, backgroundColor: c.area }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+              {/* Stacked proportion strip */}
+              <div className="flex h-3 rounded overflow-hidden gap-px pt-1">
+                {perSpeaker.map((sp, idx) => {
+                  const c = SPEAKER_COLORS[idx % SPEAKER_COLORS.length];
+                  return (
+                    <div
+                      key={idx}
+                      style={{ width: `${sp.turnPct}%`, backgroundColor: c.area }}
+                      className="opacity-70"
+                      title={`Speaker ${idx + 1}: ${sp.turnPct.toFixed(1)}% of turns`}
                     />
-                    <Bar dataKey="turns" radius={[4, 4, 0, 0]}>
-                      {perSpeaker.map((_, idx) => (
-                        <Cell key={idx} fill={SPEAKER_COLORS[idx % SPEAKER_COLORS.length].area} fillOpacity={0.8} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
