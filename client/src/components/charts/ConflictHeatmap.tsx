@@ -178,7 +178,15 @@ export function ConflictHeatmap({
                       )}%`}
                     />
                   </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
+                  <TooltipContent 
+                    className="max-w-xs cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (clickable) {
+                        onBinClick?.(b.timestampMs);
+                      }
+                    }}
+                  >
                     <div className="text-xs">
                       <div className="font-medium">
                         {toDisplayTime(b.startMs)} – {toDisplayTime(b.endMs)}
@@ -196,7 +204,7 @@ export function ConflictHeatmap({
                         </div>
                       )}
                       {b.intensity > 0 && (
-                        <div className="mt-2 text-muted-foreground">
+                        <div className="mt-2 text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
                           Click to jump to this moment.
                         </div>
                       )}

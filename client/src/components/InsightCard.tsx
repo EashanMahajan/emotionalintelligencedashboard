@@ -74,8 +74,14 @@ export function InsightCard({ insight, onClick }: InsightCardProps) {
           </p>
         </div>
 
-        <div className="opacity-0 group-hover:opacity-100 absolute right-4 bottom-4 transition-opacity">
-          <div className="bg-primary text-primary-foreground p-1.5 rounded-full shadow-lg">
+        <div 
+          className="opacity-0 group-hover:opacity-100 absolute right-4 bottom-4 transition-opacity cursor-pointer"
+          onClick={(e) => {
+            e.stopPropagation();
+            onClick();
+          }}
+        >
+          <div className="bg-primary text-primary-foreground p-1.5 rounded-full shadow-lg hover:scale-110 transition-transform">
             <Play className="w-3 h-3 fill-current" />
           </div>
         </div>

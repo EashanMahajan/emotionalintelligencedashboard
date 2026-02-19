@@ -58,6 +58,7 @@ export function Transcript({ utterances, activeTimestamp, onUtteranceClick }: Tr
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05, duration: 0.3 }}
                 ref={active ? activeRef : null}
+                data-utterance-start={u.start_ms}
                 onClick={() => onUtteranceClick?.(u.start_ms)}
                 className={cn(
                   "relative pl-6 py-3 pr-4 rounded-lg cursor-pointer transition-all duration-200 border border-transparent group",

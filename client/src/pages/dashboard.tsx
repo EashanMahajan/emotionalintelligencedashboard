@@ -21,6 +21,24 @@ export default function Dashboard() {
 
   const results = job?.results as unknown as AnalysisResult | undefined;
 
+  const handleJumpToTimestamp = (timestampMs: number) => {
+    setActiveTimestamp(timestampMs);
+    if (typeof document !== "undefined" && results?.utterances?.length) {
+      const nearest = results.utterances.reduce((best, current) => {
+        const bestDiff = Math.abs(best.start_ms - timestampMs);
+        const currentDiff = Math.abs(current.start_ms - timestampMs);
+        return currentDiff < bestDiff ? current : best;
+      }, results.utterances[0]);
+
+      const el = document.querySelector<HTMLElement>(
+        `[data-utterance-start="${nearest.start_ms}"]`
+      );
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background space-y-4">
@@ -105,13 +123,13 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
           <div className="lg:col-span-8 flex flex-col gap-6 h-full overflow-hidden">
             <div className="flex-none">
-              <SentimentViewer data={results.overallSentiment} onPointClick={setActiveTimestamp} />
+              <SentimentViewer data={results.overallSentiment} onPointClick={handleJumpToTimestamp} />
             </div>
 
             <div className="flex-none">
               <ConflictHeatmap
                 utterances={results.utterances}
-                onBinClick={setActiveTimestamp}
+                onBinClick={handleJumpToTimestamp}
               />
             </div>
 
@@ -119,7 +137,7 @@ export default function Dashboard() {
               <Transcript 
                 utterances={results.utterances} 
                 activeTimestamp={activeTimestamp} 
-                onUtteranceClick={setActiveTimestamp}
+                onUtteranceClick={handleJumpToTimestamp}
               />
             </div>
           </div>
@@ -137,7 +155,7 @@ export default function Dashboard() {
                   <InsightCard 
                     key={idx} 
                     insight={insight} 
-                    onClick={() => setActiveTimestamp(insight.timestamp)} 
+                    onClick={() => handleJumpToTimestamp(insight.timestamp)} 
                   />
                 ))}
               </div>
