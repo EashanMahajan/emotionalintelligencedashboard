@@ -2,7 +2,8 @@ import { useState, useCallback } from "react";
 import { useLocation } from "wouter";
 import { useUploadJob } from "@/hooks/use-jobs";
 import { useDropzone } from "react-dropzone";
-import { UploadCloud, FileAudio, AlertCircle, Loader2, BarChart2, Mic, ShieldCheck, Zap, Brain } from "lucide-react";
+import { UploadCloud, FileAudio, AlertCircle, Loader2, BarChart2, Mic, ShieldCheck, Zap } from "lucide-react";
+import { ResonanceLogo } from "@/components/ResonanceLogo";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
@@ -12,7 +13,7 @@ import { AudioRecorder } from "@/components/AudioRecorder";
 
 const FEATURES = [
   {
-    icon: Brain,
+    icon: ResonanceLogo,
     color: "text-primary",
     bg: "bg-primary/10",
     title: "Emotion Analysis",
@@ -52,13 +53,17 @@ export default function UploadPage() {
     
     const file = acceptedFiles[0];
     try {
-      const result = await uploadMutation.mutateAsync(file);
       toast({
         title: "Analysis Started",
-        description: "Processing your audio. Redirecting to dashboard...",
+        description: "Uploading and processing your audio…",
+      });
+      const result = await uploadMutation.mutateAsync(file);
+      toast({
+        title: "Analysis Complete",
+        description: "Your audio has been fully analysed.",
       });
       // Redirect to results page
-      setTimeout(() => setLocation(`/results/${result.id}`), 1000);
+      setLocation(`/results/${result.id}`);
     } catch (error) {
       toast({
         variant: "destructive",
@@ -87,12 +92,16 @@ export default function UploadPage() {
   const handleRecordingComplete = useCallback(async (audioBlob: Blob, filename: string) => {
     const file = new File([audioBlob], filename, { type: audioBlob.type });
     try {
-      const result = await uploadMutation.mutateAsync(file);
       toast({
         title: "Analysis Started",
-        description: "Processing your recording...",
+        description: "Uploading and processing your recording…",
       });
-      setTimeout(() => setLocation(`/results/${result.id}`), 1000);
+      const result = await uploadMutation.mutateAsync(file);
+      toast({
+        title: "Analysis Complete",
+        description: "Your recording has been fully analysed.",
+      });
+      setLocation(`/results/${result.id}`);
     } catch (error) {
       toast({
         variant: "destructive",
@@ -117,7 +126,7 @@ export default function UploadPage() {
           className="text-center mb-5 max-w-2xl"
         >
           <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 text-primary px-3.5 py-1 rounded-full text-xs font-semibold tracking-wide mb-3">
-            <Brain className="w-3.5 h-3.5" />
+            <ResonanceLogo className="w-3.5 h-3.5" />
             Powered by Deepgram AI
           </div>
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">

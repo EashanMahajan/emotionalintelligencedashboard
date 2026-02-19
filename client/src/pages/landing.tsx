@@ -2,6 +2,7 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { UserPlus, LogIn, BarChart2, Mic, TrendingUp, Users, ChevronRight, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
+import { ResonanceLogo } from "@/components/ResonanceLogo";
 
 export default function LandingPage() {
   const [, setLocation] = useLocation();
@@ -15,10 +16,13 @@ export default function LandingPage() {
       </div>
 
       {/* Navigation Bar */}
-      <nav className="relative z-10 border-b bg-background/80 backdrop-blur-sm">
-        <div className="mx-auto max-w-7xl px-4 py-4 flex items-center justify-between">
-          <div className="text-xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            Resonance
+      <nav className="relative z-10 border-b border-border/60 bg-background/80 backdrop-blur-md">
+        <div className="mx-auto max-w-6xl px-6 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="bg-primary/10 border border-primary/20 rounded-lg p-1.5">
+              <ResonanceLogo className="w-4 h-4 text-primary" />
+            </div>
+            <span className="text-base font-semibold uppercase tracking-widest bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent">Resonance</span>
           </div>
           <div className="flex items-center gap-3">
             <Button variant="ghost" onClick={() => setLocation("/signin")}>

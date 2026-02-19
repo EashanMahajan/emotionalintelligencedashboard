@@ -5,7 +5,7 @@ import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import { analyzeWithDeepgram } from "./deepgram";
-import { buildSystemPrompt, streamChat, type ChatMessage } from "./gemini";
+import { buildSystemPrompt, chat, generateSummary, type ChatMessage } from "./gemini";
 import type { AnalysisResult } from "@shared/schema";
 
 const ALLOWED_MIMES = [
@@ -95,38 +95,49 @@ export async function registerRoutes(
 });
 
   app.post("/api/chat", async (req, res) => {
-    if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === "your_gemini_api_key_here") {
-      return res.status(503).json({ message: "Gemini API key not configured. Add GEMINI_API_KEY to your .env file." });
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey || apiKey === "your_gemini_api_key_here") {
+      return res.status(503).json({ error: "Gemini API key not configured. Add GEMINI_API_KEY to your .env file." });
     }
     try {
       const { messages, context } = req.body as {
         messages: ChatMessage[];
         context: AnalysisResult;
       };
-      if (!messages || !context) {
-        return res.status(400).json({ message: "messages and context are required" });
+      if (!Array.isArray(messages) || messages.length === 0 || !context) {
+        return res.status(400).json({ error: "messages array and context are required" });
       }
-      const userMessage = messages[messages.length - 1]?.content;
-      if (!userMessage) return res.status(400).json({ message: "No user message provided" });
+      const lastMsg = messages[messages.length - 1];
+      if (!lastMsg || lastMsg.role !== "user" || !lastMsg.content.trim()) {
+        return res.status(400).json({ error: "Last message must be a non-empty user message" });
+      }
+
       const history = messages.slice(0, -1);
       const systemPrompt = buildSystemPrompt(context);
+      const reply = await chat(apiKey, systemPrompt, history, lastMsg.content);
 
-      res.setHeader("Content-Type", "text/plain; charset=utf-8");
-      res.setHeader("Transfer-Encoding", "chunked");
-      res.setHeader("Cache-Control", "no-cache");
-      res.flushHeaders();
-
-      await streamChat(systemPrompt, history, userMessage, (chunk) => {
-        res.write(chunk);
-      });
-      res.end();
+      res.json({ reply });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Chat failed";
-      if (!res.headersSent) {
-        res.status(500).json({ message });
-      } else {
-        res.end();
+      res.status(500).json({ error: message });
+    }
+  });
+
+  app.post("/api/ai-summary", async (req, res) => {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey || apiKey === "your_gemini_api_key_here") {
+      return res.status(503).json({ error: "Gemini API key not configured." });
+    }
+    try {
+      const { context } = req.body as { context: AnalysisResult };
+      if (!context) {
+        return res.status(400).json({ error: "context is required" });
       }
+      const report = await generateSummary(apiKey, context);
+      res.json({ report });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Summary generation failed";
+      res.status(500).json({ error: message });
     }
   });
 

@@ -1,6 +1,7 @@
 import { useLocation } from "wouter";
 import { useAuth } from "@/contexts/auth-context";
-import { LogOut, Moon, Sun, User, Brain, LayoutDashboard, UploadCloud, History } from "lucide-react";
+import { LogOut, Moon, Sun, User, LayoutDashboard, UploadCloud, History } from "lucide-react";
+import { ResonanceLogo } from "@/components/ResonanceLogo";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import {
@@ -25,7 +26,7 @@ export default function Nav() {
 
   const handleLogout = () => {
     logout();
-    setLocation("/signin");
+    setLocation("/");
   };
 
   const isDark = resolvedTheme === "dark";
@@ -36,9 +37,9 @@ export default function Nav() {
         {/* Logo */}
         <button onClick={() => setLocation("/dashboard")} className="flex items-center gap-2 group">
           <div className="bg-primary/10 border border-primary/20 rounded-lg p-1.5 group-hover:bg-primary/20 transition-colors">
-            <Brain className="w-4 h-4 text-primary" />
+            <ResonanceLogo className="w-4 h-4 text-primary" />
           </div>
-          <span className="text-base font-bold tracking-tight">Resonance</span>
+          <span className="text-base font-semibold uppercase tracking-widest bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent">Resonance</span>
         </button>
 
         {/* Pill nav */}
@@ -95,7 +96,7 @@ export default function Nav() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout} className="text-destructive cursor-pointer gap-2 focus:text-destructive">
+              <DropdownMenuItem onClick={handleLogout} className="text-rose-400 cursor-pointer gap-2 focus:text-rose-400 focus:bg-rose-500/10">
                 <LogOut className="w-4 h-4" /> Sign Out
               </DropdownMenuItem>
             </DropdownMenuContent>

@@ -3,7 +3,7 @@ import { useJobs } from "@/hooks/use-jobs";
 import { format, formatDistanceToNow } from "date-fns";
 import {
   ChevronRight, FileAudio, BarChart2, Loader2, UploadCloud,
-  CheckCircle2, XCircle, Users, History,
+  CheckCircle2, XCircle, Users, History, Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -124,6 +124,7 @@ export default function HistoryPage() {
               const sb = sentimentBar(job);
               const speakers = [...new Set(job.results?.utterances?.map(u => u.speaker_id) ?? [])];
               const turns = job.results?.utterances?.length ?? 0;
+              const hasAiReport = (() => { try { return !!sessionStorage.getItem(`ai-report-${job.id}`); } catch { return false; } })();
 
               return (
                 <motion.div
@@ -157,6 +158,12 @@ export default function HistoryPage() {
                           </p>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
+                          {hasAiReport && (
+                            <span className="flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-violet-500/15 text-violet-400 border border-violet-500/20">
+                              <Sparkles className="w-2.5 h-2.5" />
+                              AI Report
+                            </span>
+                          )}
                           <span className={cn("text-[11px] font-medium px-2 py-0.5 rounded-full", sc.badge)}>
                             {sc.label}
                           </span>

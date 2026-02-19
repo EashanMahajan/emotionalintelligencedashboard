@@ -9,7 +9,6 @@ import {
   ChevronRight,
   CheckCircle2,
   XCircle,
-  Brain,
   Sparkles,
   TrendingUp,
   Users,
@@ -110,10 +109,9 @@ export default function DashboardOverview() {
         <div className="relative container mx-auto px-6 py-12 max-w-5xl">
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
             <div className="flex items-center gap-2 mb-3">
-              <div className="bg-primary/10 border border-primary/20 rounded-lg p-2">
-                <Brain className="w-5 h-5 text-primary" />
-              </div>
-              <span className="text-xs font-medium text-primary/80 uppercase tracking-widest">Resonance</span>
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-widest">
+                {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+              </span>
             </div>
             <h1 className="text-4xl font-bold tracking-tight">Welcome back</h1>
             <p className="text-muted-foreground mt-2 text-base max-w-lg">
@@ -236,6 +234,7 @@ export default function DashboardOverview() {
                 const sb = sentimentBar(job);
                 const speakers = [...new Set(job.results?.utterances?.map(u => u.speaker_id) ?? [])];
                 const turns = job.results?.utterances?.length ?? 0;
+                const hasAiReport = (() => { try { return !!sessionStorage.getItem(`ai-report-${job.id}`); } catch { return false; } })();
 
                 return (
                   <motion.div
@@ -271,6 +270,12 @@ export default function DashboardOverview() {
                             </p>
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
+                            {hasAiReport && (
+                              <span className="flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-violet-500/15 text-violet-400 border border-violet-500/20">
+                                <Sparkles className="w-2.5 h-2.5" />
+                                AI Report
+                              </span>
+                            )}
                             <span className={cn("text-[11px] font-medium px-2 py-0.5 rounded-full", sc.badge)}>
                               {sc.label}
                             </span>

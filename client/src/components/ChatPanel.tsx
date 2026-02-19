@@ -4,12 +4,14 @@ import { MessageCircle, X, Send, Loader2, Bot, User, Sparkles } from "lucide-rea
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import type { AnalysisResult } from "@shared/schema";
 
 interface Message {
   role: "user" | "model";
   content: string;
-  streaming?: boolean;
+  thinking?: boolean;
 }
 
 interface Props {
@@ -39,62 +41,52 @@ export function ChatPanel({ context, filename }: Props) {
     if (!text || loading) return;
     setInput("");
 
+    // Build updated message list (exclude the initial greeting from history sent to server)
     const userMsg: Message = { role: "user", content: text };
-    const allMessages = [...messages, userMsg];
-    setMessages(allMessages);
+    const nextMessages = [...messages, userMsg];
+    setMessages([...nextMessages, { role: "model", content: "", thinking: true }]);
     setLoading(true);
 
-    // placeholder for streaming
-    setMessages((prev) => [...prev, { role: "model", content: "", streaming: true }]);
-
     try {
+      // Only send real conversation turns — strip the initial model greeting
+      const historyForServer = nextMessages
+        .filter((m) => !(m as Message & { thinking?: boolean }).thinking)
+        .filter((m, i) => !(i === 0 && m.role === "model")); // skip opening greeting
+
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: allMessages
-            .filter((m) => !m.streaming)
-            .map((m) => ({ role: m.role, content: m.content })),
-          context,
-        }),
+        body: JSON.stringify({ messages: historyForServer, context }),
       });
 
+      const data = await res.json().catch(() => ({}));
+
       if (!res.ok) {
-        const errText = await res.text().catch(() => "");
-        let errMsg = "Request failed";
-        try { errMsg = JSON.parse(errText).message ?? errMsg; } catch { errMsg = errText || errMsg; }
+        const errMsg = data.error ?? data.message ?? `Server error ${res.status}`;
         setMessages((prev) => [
           ...prev.slice(0, -1),
-          { role: "model", content: `Error: ${errMsg}` },
+          { role: "model", content: `⚠️ ${errMsg}` },
         ]);
         return;
       }
 
-      const reader = res.body?.getReader();
-      const decoder = new TextDecoder();
-      let accumulated = "";
-
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          accumulated += decoder.decode(value, { stream: true });
-          setMessages((prev) => [
-            ...prev.slice(0, -1),
-            { role: "model", content: accumulated, streaming: true },
-          ]);
-        }
+      if (!data.reply) {
+        setMessages((prev) => [
+          ...prev.slice(0, -1),
+          { role: "model", content: "⚠️ Got an empty response. Please try again." },
+        ]);
+        return;
       }
 
-      // finalise — remove streaming flag
       setMessages((prev) => [
         ...prev.slice(0, -1),
-        { role: "model", content: accumulated },
+        { role: "model", content: data.reply },
       ]);
-    } catch {
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Network error";
       setMessages((prev) => [
         ...prev.slice(0, -1),
-        { role: "model", content: "Something went wrong. Please try again." },
+        { role: "model", content: `⚠️ ${msg}` },
       ]);
     } finally {
       setLoading(false);
@@ -109,25 +101,28 @@ export function ChatPanel({ context, filename }: Props) {
     }
   }
 
-  // Render simple markdown-ish formatting: **bold**, bullet lists
   function renderContent(text: string) {
-    const lines = text.split("\n");
-    return lines.map((line, i) => {
-      // Convert **bold**
-      const parts = line.split(/(\*\*[^*]+\*\*)/g).map((p, j) =>
-        p.startsWith("**") && p.endsWith("**") ? (
-          <strong key={j}>{p.slice(2, -2)}</strong>
-        ) : (
-          p
-        )
-      );
-      return (
-        <span key={i}>
-          {parts}
-          {i < lines.length - 1 && <br />}
-        </span>
-      );
-    });
+    return (
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          p: ({ children }) => <p className="mb-1.5 last:mb-0">{children}</p>,
+          strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+          em: ({ children }) => <em className="italic">{children}</em>,
+          ul: ({ children }) => <ul className="list-disc list-inside space-y-0.5 mb-1.5">{children}</ul>,
+          ol: ({ children }) => <ol className="list-decimal list-inside space-y-0.5 mb-1.5">{children}</ol>,
+          li: ({ children }) => <li className="leading-snug">{children}</li>,
+          h1: ({ children }) => <h1 className="font-bold text-sm mb-1">{children}</h1>,
+          h2: ({ children }) => <h2 className="font-semibold text-[13px] mb-1">{children}</h2>,
+          h3: ({ children }) => <h3 className="font-semibold mb-0.5">{children}</h3>,
+          code: ({ children }) => <code className="bg-muted rounded px-1 py-0.5 text-[11px] font-mono">{children}</code>,
+          blockquote: ({ children }) => <blockquote className="border-l-2 border-border pl-2 text-muted-foreground italic mb-1">{children}</blockquote>,
+          hr: () => <hr className="border-border my-1.5" />,
+        }}
+      >
+        {text}
+      </ReactMarkdown>
+    );
   }
 
   const SUGGESTIONS = [
@@ -142,20 +137,22 @@ export function ChatPanel({ context, filename }: Props) {
       {/* Floating trigger */}
       <motion.button
         onClick={() => setOpen((o) => !o)}
-        className="fixed bottom-6 right-6 z-50 flex items-center justify-center w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 hover:scale-105 active:scale-95 transition-transform"
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 h-11 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:brightness-110 hover:scale-105 active:scale-95 transition-all duration-200"
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.5 }}
-        title="Ask AI about this conversation"
+        title="Chat with the AI about this conversation"
       >
         <AnimatePresence mode="wait">
           {open ? (
-            <motion.span key="x" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.15 }}>
-              <X className="w-5 h-5" />
+            <motion.span key="x" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.15 }} className="flex items-center gap-2">
+              <X className="w-4 h-4 shrink-0" />
+              <span className="text-sm font-semibold tracking-tight">Close</span>
             </motion.span>
           ) : (
-            <motion.span key="chat" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.15 }}>
-              <MessageCircle className="w-5 h-5" />
+            <motion.span key="chat" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.15 }} className="flex items-center gap-2">
+              <Bot className="w-4 h-4 shrink-0" />
+              <span className="text-sm font-semibold tracking-tight">Resonance Chat</span>
             </motion.span>
           )}
         </AnimatePresence>
@@ -170,17 +167,17 @@ export function ChatPanel({ context, filename }: Props) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.96 }}
             transition={{ type: "spring", stiffness: 320, damping: 28 }}
-            className="fixed bottom-22 right-6 z-50 flex flex-col w-[380px] h-[540px] rounded-2xl border border-border/60 bg-card shadow-2xl shadow-black/40 overflow-hidden"
+            className="fixed bottom-[76px] right-6 z-50 flex flex-col w-[380px] h-[540px] rounded-2xl border border-border/60 bg-card shadow-2xl shadow-black/40 overflow-hidden"
           >
             {/* Header */}
             <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50 bg-muted/30">
-              <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/15">
-                <Sparkles className="w-3.5 h-3.5 text-primary" />
+              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/15 border border-primary/20">
+                <Bot className="w-4 h-4 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-semibold">Conversation AI</div>
+                <div className="text-sm font-semibold">Resonance Chat</div>
                 <div className="text-[10px] text-muted-foreground truncate">
-                  {filename ? `Analysing: ${filename}` : "Ask anything about this call"}
+                  Ask anything about this conversation
                 </div>
               </div>
               <Button variant="ghost" size="icon" className="w-7 h-7 shrink-0" onClick={() => setOpen(false)}>
@@ -214,12 +211,13 @@ export function ChatPanel({ context, filename }: Props) {
                         ? "bg-primary text-primary-foreground rounded-tr-sm"
                         : "bg-muted/50 text-foreground rounded-tl-sm border border-border/30"
                     }`}>
-                      {m.content ? renderContent(m.content) : (
-                        <span className="flex gap-1 items-center text-muted-foreground">
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                          Thinking…
+                      {(m as Message & { thinking?: boolean }).thinking ? (
+                        <span className="flex gap-1 items-center h-4">
+                          <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:0ms]" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:150ms]" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:300ms]" />
                         </span>
-                      )}
+                      ) : m.content ? renderContent(m.content) : null}
                     </div>
                   </motion.div>
                 ))}
@@ -234,7 +232,37 @@ export function ChatPanel({ context, filename }: Props) {
                   {SUGGESTIONS.map((s) => (
                     <button
                       key={s}
-                      onClick={() => { setInput(s); textareaRef.current?.focus(); }}
+                      onClick={() => {
+                        setInput(s);
+                        // Use a microtask so input state is set before send() reads it
+                        setTimeout(() => {
+                          setInput("");
+                          const userMsg: Message = { role: "user", content: s };
+                          const nextMessages = [...messages, userMsg];
+                          setMessages([...nextMessages, { role: "model", content: "", thinking: true }]);
+                          setLoading(true);
+                          const historyForServer = nextMessages.filter(
+                            (m, i) => !(i === 0 && m.role === "model")
+                          );
+                          fetch("/api/chat", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ messages: historyForServer, context }),
+                          })
+                            .then((res) => res.json().then((data) => ({ res, data })))
+                            .then(({ res, data }) => {
+                              if (!res.ok) {
+                                setMessages((prev) => [...prev.slice(0, -1), { role: "model", content: `⚠️ ${data.error ?? data.message ?? `Server error ${res.status}`}` }]);
+                              } else {
+                                setMessages((prev) => [...prev.slice(0, -1), { role: "model", content: data.reply ?? "⚠️ Empty response." }]);
+                              }
+                            })
+                            .catch((err) => {
+                              setMessages((prev) => [...prev.slice(0, -1), { role: "model", content: `⚠️ ${err instanceof Error ? err.message : "Network error"}` }]);
+                            })
+                            .finally(() => setLoading(false));
+                        }, 0);
+                      }}
                       className="text-[10px] px-2 py-1 rounded-full border border-border/50 bg-muted/30 text-muted-foreground hover:text-foreground hover:border-border transition-colors"
                     >
                       {s}

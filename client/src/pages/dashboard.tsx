@@ -1,10 +1,11 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useJob } from "@/hooks/use-jobs";
 import { AnalysisResult } from "@shared/schema";
+import { ResonanceLogo } from "@/components/ResonanceLogo";
 import {
   Loader2, AlertCircle, UploadCloud, ChevronLeft, Download,
-  Clock, Users, MessageSquare, TrendingUp, Zap, Brain, Headphones, FileText
+  Clock, Users, MessageSquare, TrendingUp, Zap, Headphones, FileText, Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +20,7 @@ import { TopicsCard } from "@/components/TopicsCard";
 import { IntentsCard } from "@/components/IntentsCard";
 import { PlaybackTab, type PlaybackTabHandle } from "@/components/PlaybackTab";
 import { SpeakerAnalysisTab } from "@/components/SpeakerAnalysisTab";
+import { AISummaryTab, type AISummaryState } from "@/components/AISummaryTab";
 import { ChatPanel } from "@/components/ChatPanel";
 import { motion } from "framer-motion";
 import { exportAnalysisToCSV } from "@/lib/csv-export";
@@ -47,6 +49,42 @@ export default function Dashboard() {
   const { data: job, isLoading, error } = useJob(id);
   const [activeTimestamp, setActiveTimestamp] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<string>("text");
+
+  const storageKey = `ai-report-${id}`;
+  const [aiSummaryState, setAiSummaryState] = useState<AISummaryState>(() => {
+    try { return sessionStorage.getItem(storageKey) ? "done" : "idle"; } catch { return "idle"; }
+  });
+  const [aiReport, setAiReport] = useState<string>(() => {
+    try { return sessionStorage.getItem(storageKey) ?? ""; } catch { return ""; }
+  });
+  const [aiError, setAiError] = useState<string>("");
+
+  // Persist report to sessionStorage whenever it changes
+  useEffect(() => {
+    if (!aiReport) return;
+    try { sessionStorage.setItem(storageKey, aiReport); } catch {}
+  }, [aiReport, storageKey]);
+
+  async function generateAiReport() {
+    if (!results) return;
+    setAiSummaryState("loading");
+    setAiError("");
+    try {
+      const res = await fetch("/api/ai-summary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ context: results }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? `Server error ${res.status}`);
+      if (!data.report) throw new Error("Empty report received.");
+      setAiReport(data.report);
+      setAiSummaryState("done");
+    } catch (err) {
+      setAiError(err instanceof Error ? err.message : "Something went wrong.");
+      setAiSummaryState("error");
+    }
+  }
   const playbackRef = useRef<PlaybackTabHandle>(null);
 
   const results = job?.results as unknown as AnalysisResult | undefined;
@@ -173,7 +211,7 @@ export default function Dashboard() {
             </Button>
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                <Brain className="w-4 h-4 text-primary" />
+                <ResonanceLogo className="w-4 h-4 text-primary" />
               </div>
               <div>
                 <h1 className="text-sm font-bold tracking-tight leading-none">{job.filename}</h1>
@@ -186,6 +224,12 @@ export default function Dashboard() {
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               Ready
             </Badge>
+            {aiSummaryState === "done" && (
+              <Badge className="hidden sm:flex gap-1.5 text-xs font-medium bg-violet-500/15 text-violet-400 border border-violet-500/20 hover:bg-violet-500/20">
+                <Sparkles className="w-3 h-3" />
+                AI Report
+              </Badge>
+            )}
             <Button variant="outline" size="sm" onClick={handleDownloadCSV}>
               <Download className="w-4 h-4 mr-2" />
               Export CSV
@@ -271,12 +315,12 @@ export default function Dashboard() {
       <main className="flex-1 container mx-auto px-4 py-6 overflow-hidden h-[calc(100vh-120px)]">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
           {/* Left column */}
-          <div className={cn(activeTab === "speakers" ? "lg:col-span-12" : "lg:col-span-8", "flex flex-col gap-5 h-full overflow-hidden")}>
+          <div className={cn(activeTab === "speakers" || activeTab === "ai" ? "lg:col-span-12" : "lg:col-span-8", "flex flex-col gap-5 h-full overflow-hidden")}>
             <motion.div
               initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
             >
               <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="grid w-full grid-cols-4 max-w-xl">
+                <TabsList className="grid w-full grid-cols-5 max-w-2xl">
                   <TabsTrigger value="text" className="gap-1.5">
                     <FileText className="w-3.5 h-3.5" />
                     Overview
@@ -292,6 +336,10 @@ export default function Dashboard() {
                   <TabsTrigger value="speakers" className="gap-1.5">
                     <Users className="w-3.5 h-3.5" />
                     Speakers
+                  </TabsTrigger>
+                  <TabsTrigger value="ai" className="gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    AI Report
                   </TabsTrigger>
                 </TabsList>
               
@@ -326,10 +374,20 @@ export default function Dashboard() {
                     }}
                   />
                 </TabsContent>
+
+                <TabsContent value="ai" className="overflow-y-auto max-h-[calc(100vh-220px)] pr-1 mt-4">
+                  <AISummaryTab
+                    context={results}
+                    state={aiSummaryState}
+                    report={aiReport}
+                    errorMsg={aiError}
+                    onGenerate={generateAiReport}
+                  />
+                </TabsContent>
               </Tabs>
             </motion.div>
 
-            {activeTab !== "playback" && activeTab !== "speakers" && (
+            {activeTab !== "playback" && activeTab !== "speakers" && activeTab !== "ai" && (
               <motion.div
                 initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
                 className="h-[380px] min-h-0 flex-shrink-0"
@@ -347,7 +405,8 @@ export default function Dashboard() {
           </div>
 
           {/* Right column */}
-          <div className={cn(activeTab === "speakers" ? "hidden" : "lg:col-span-4", "flex flex-col gap-5 h-full overflow-y-auto pr-1 pb-6")}>
+          {activeTab !== "speakers" && activeTab !== "ai" && (
+          <div className="lg:col-span-4 flex flex-col gap-5 h-full overflow-y-auto pr-1 pb-6">
             <motion.div
               initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 }}
               className="space-y-3"
@@ -387,6 +446,7 @@ export default function Dashboard() {
               <SpeakerStats stats={results.speakerStats} />
             </motion.div>
           </div>
+          )}
         </div>
       </main>
 
