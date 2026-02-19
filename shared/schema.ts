@@ -1,27 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, real } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-
-// === TABLE DEFINITIONS ===
-
-// We'll store the uploaded files and their processing status
-export const analysisJobs = pgTable("analysis_jobs", {
-  id: serial("id").primaryKey(),
-  filename: text("filename").notNull(),
-  status: text("status").notNull().default("pending"), // pending, processing, completed, failed
-  createdAt: timestamp("created_at").defaultNow(),
-  // Storing the full result JSON here for the MVP since it's a document-heavy structure
-  // In a real production DB we might normalize this, but for this dashboard MVP jsonb is perfect
-  results: jsonb("results"), 
-});
-
-// === SCHEMAS ===
-
-export const insertAnalysisJobSchema = createInsertSchema(analysisJobs).omit({ 
-  id: true, 
-  createdAt: true, 
-  results: true 
-});
 
 // === DOMAIN TYPES (Matching TDD) ===
 
@@ -57,18 +34,30 @@ export const analysisResultSchema = z.object({
   utterances: z.array(utteranceSchema),
   insights: z.array(insightSchema),
   speakerStats: z.array(speakerStatsSchema),
-  overallSentiment: z.array(z.object({
-    timestamp: z.number(),
-    score: z.number()
-  })), // For the line chart
-  conflictHeatmap: z.array(z.object({
-    timestamp: z.number(),
-    intensity: z.number()
-  })), // For the heatmap
+  overallSentiment: z.array(
+    z.object({
+      timestamp: z.number(),
+      score: z.number(),
+    })
+  ), // For the line chart
+  conflictHeatmap: z.array(
+    z.object({
+      timestamp: z.number(),
+      intensity: z.number(),
+    })
+  ), // For the heatmap
 });
 
-export type AnalysisJob = typeof analysisJobs.$inferSelect;
-export type InsertAnalysisJob = z.infer<typeof insertAnalysisJobSchema>;
+// Local job shape (no DB)
+export const analysisJobSchema = z.object({
+  id: z.number(),
+  filename: z.string(),
+  status: z.enum(["pending", "processing", "completed", "failed"]),
+  createdAt: z.string(),
+  results: analysisResultSchema.optional().nullable(),
+});
+
+export type AnalysisJob = z.infer<typeof analysisJobSchema>;
 export type Utterance = z.infer<typeof utteranceSchema>;
 export type Insight = z.infer<typeof insightSchema>;
 export type AnalysisResult = z.infer<typeof analysisResultSchema>;

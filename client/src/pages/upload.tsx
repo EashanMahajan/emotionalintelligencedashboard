@@ -25,7 +25,7 @@ export default function UploadPage() {
         description: "Analysis started. Redirecting to dashboard...",
       });
       // Redirect to results page
-      setTimeout(() => setLocation(`/results/${result.jobId}`), 1000);
+      setTimeout(() => setLocation(`/results/${result.id}`), 1000);
     } catch (error) {
       toast({
         variant: "destructive",
@@ -40,19 +40,11 @@ export default function UploadPage() {
     onDragEnter: () => setIsDragActive(true),
     onDragLeave: () => setIsDragActive(false),
     accept: {
-      'audio/mpeg': ['.mp3'],
-      'audio/wav': ['.wav'],
-      'audio/wave': ['.wav'],
-      'audio/x-wav': ['.wav'],
-      'audio/mp4': ['.m4a'],
-      'audio/x-m4a': ['.m4a'],
-      'audio/*': ['.mp3', '.wav', '.m4a', '.aac', '.ogg'],
-      'video/mp4': ['.mp4'],
-      'video/quicktime': ['.mov'],
+      "audio/mpeg": [".mp3"],
     },
     maxFiles: 1,
     maxSize: 50 * 1024 * 1024, // 50MB
-    multiple: false
+    multiple: false,
   });
 
   return (
@@ -136,7 +128,7 @@ export default function UploadPage() {
                     {isDragActive ? "Drop audio file here" : "Drag & drop audio file"}
                   </h3>
                   <p className="text-muted-foreground mb-8 max-w-xs">
-                    Supports MP3, WAV, M4A up to 50MB.
+                    Supports MP3 up to 50MB.
                   </p>
                   <Button size="lg" className="rounded-full px-8 shadow-lg shadow-primary/20">
                     Browse Files

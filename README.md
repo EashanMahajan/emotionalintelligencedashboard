@@ -4,22 +4,17 @@
 
 1. **Prerequisites**:
    - Node.js (v20+)
-   - PostgreSQL (v15+)
 
 2. **Installation**:
    ```bash
    npm install
    ```
 
-3. **Database Setup**:
-   - Create a Postgres database (e.g. `emotional_intelligence`)
+3. **Environment**:
    - Create a `.env` file in the root directory with:
      ```
-     DATABASE_URL=postgresql://user:password@localhost:5432/emotional_intelligence
-     ```
-   - Push the schema to the database:
-     ```bash
-     npm run db:push
+     DEEPGRAM_API_KEY=your_deepgram_key
+     DEEPGRAM_MODEL=nova-3
      ```
 
 4. **Running**:
@@ -29,7 +24,7 @@
    Open http://localhost:5000 in your browser.
 
 ## Features
-- Audio upload and analysis
+- Audio upload and analysis (local proxy to Deepgram APIs)
 - Speaker-diarized transcripts
 - Sentiment analysis visualization
 - Conflict and insight detection

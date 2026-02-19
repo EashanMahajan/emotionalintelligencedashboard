@@ -4,6 +4,7 @@ import multer from "multer";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
+import { analyzeWithDeepgram } from "./deepgram";
 
 // Accept audio/video formats for transcription analysis
 const ALLOWED_MIMES = [
@@ -31,7 +32,24 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  
+  app.post("/api/analyze", upload.single("file"), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file provided. Please upload an MP3." });
+      }
+      const jobId = Number.parseInt(String(req.query.jobId || ""), 10);
+      const results = await analyzeWithDeepgram(Number.isFinite(jobId) ? jobId : 0, {
+        buffer: req.file.buffer,
+        mimetype: req.file.mimetype,
+        filename: req.file.originalname,
+      });
+      res.json(results);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Analysis failed";
+      res.status(500).json({ message });
+    }
+  });
+
   // Upload endpoint - parses multipart file, creates job
   app.post(api.jobs.upload.path, upload.single("file"), async (req, res, next) => {
     try {
@@ -40,10 +58,10 @@ export async function registerRoutes(
       }
       const filename = req.file.originalname;
       const job = await storage.createJob(filename);
-      
+
       // Simulate background processing (file in memory but not persisted for mock)
       mockProcessJob(job.id);
-      
+
       res.status(201).json({
         jobId: job.id,
         status: job.status

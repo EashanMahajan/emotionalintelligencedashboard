@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { analysisResultSchema, analysisJobs, insertAnalysisJobSchema } from './schema';
+import { analysisJobSchema } from './schema';
 
 // ============================================
 // SHARED ERROR SCHEMAS
@@ -29,7 +29,7 @@ export const api = {
       responses: {
         201: z.object({
           jobId: z.number(),
-          status: z.string()
+          status: z.string(),
         }),
         400: errorSchemas.validation,
       },
@@ -38,7 +38,7 @@ export const api = {
       method: 'GET' as const,
       path: '/api/results/:id' as const,
       responses: {
-        200: z.custom<typeof analysisJobs.$inferSelect>(),
+        200: analysisJobSchema,
         404: errorSchemas.notFound,
       },
     },
@@ -46,9 +46,9 @@ export const api = {
       method: 'GET' as const,
       path: '/api/jobs' as const,
       responses: {
-        200: z.array(z.custom<typeof analysisJobs.$inferSelect>()),
+        200: z.array(analysisJobSchema),
       },
-    }
+    },
   },
 };
 

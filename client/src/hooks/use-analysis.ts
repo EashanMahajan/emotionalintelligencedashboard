@@ -2,28 +2,20 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl } from "@shared/routes";
 import { AnalysisJob } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { createLocalJob, getLocalJob, listLocalJobs, updateLocalJobStatus } from "@/lib/local-jobs";
+import { analyzeAudioFile } from "@/lib/deepgram";
 
 export function useAnalysisJobs() {
   return useQuery({
     queryKey: [api.jobs.list.path],
-    queryFn: async () => {
-      const res = await fetch(api.jobs.list.path, { credentials: "include" });
-      if (!res.ok) throw new Error("Failed to fetch jobs");
-      return api.jobs.list.responses[200].parse(await res.json());
-    },
+    queryFn: async () => listLocalJobs(),
   });
 }
 
 export function useAnalysisJob(id: number) {
   return useQuery({
     queryKey: [api.jobs.get.path, id],
-    queryFn: async () => {
-      const url = buildUrl(api.jobs.get.path, { id });
-      const res = await fetch(url, { credentials: "include" });
-      if (res.status === 404) return null;
-      if (!res.ok) throw new Error("Failed to fetch job details");
-      return api.jobs.get.responses[200].parse(await res.json());
-    },
+    queryFn: async () => getLocalJob(id),
     // Poll every 2 seconds if status is pending or processing
     refetchInterval: (query) => {
       const data = query.state.data as AnalysisJob | undefined;
@@ -41,27 +33,18 @@ export function useUploadAnalysis() {
 
   return useMutation({
     mutationFn: async (file: File) => {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const res = await fetch(api.jobs.upload.path, {
-        method: "POST",
-        body: formData,
-        credentials: "include",
-        // Note: Do not set Content-Type header manually for FormData, let browser set it with boundary
-      });
-
-      if (!res.ok) {
-        if (res.status === 400) {
-          const error = await res.json();
-          throw new Error(error.message || "Invalid upload");
-        }
-        throw new Error("Upload failed");
+      const job = await createLocalJob(file.name);
+      await updateLocalJobStatus(job.id, "processing");
+      try {
+        const results = await analyzeAudioFile(file, job.id);
+        return await updateLocalJobStatus(job.id, "completed", results);
+      } catch (error) {
+        await updateLocalJobStatus(job.id, "failed");
+        throw error;
       }
-
-      return api.jobs.upload.responses[201].parse(await res.json());
     },
-    onSuccess: () => {
+    onSuccess: (job) => {
+      queryClient.setQueryData([api.jobs.get.path, job.id], job);
       queryClient.invalidateQueries({ queryKey: [api.jobs.list.path] });
       toast({
         title: "Upload Successful",
