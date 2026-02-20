@@ -22,9 +22,8 @@ export function AudioRecorder({ onRecordingComplete, isProcessing = false }: Aud
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  // Request microphone permission on mount
+  // Clean up stream/timer on unmount
   useEffect(() => {
-    checkMicrophonePermission();
     return () => {
       stopRecording();
       if (streamRef.current) {
@@ -57,6 +56,7 @@ export function AudioRecorder({ onRecordingComplete, isProcessing = false }: Aud
       });
       
       streamRef.current = stream;
+      setHasPermission(true);
       
       // Use webm with opus codec for better browser compatibility
       const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
@@ -99,6 +99,7 @@ export function AudioRecorder({ onRecordingComplete, isProcessing = false }: Aud
       }, 1000);
       
     } catch (err) {
+      setHasPermission(false);
       setError("Failed to start recording. Please check your microphone.");
       console.error("Recording error:", err);
     }
