@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const navLinks = [
-  { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard, match: (l: string) => l === "/dashboard" || l.startsWith("/results") },
+  { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard, match: (l: string) => l === "/" || l === "/dashboard" || l.startsWith("/results") },
   { label: "New Analysis", path: "/upload", icon: UploadCloud, match: (l: string) => l === "/upload" },
   { label: "History", path: "/history", icon: History, match: (l: string) => l === "/history" },
 ];
@@ -74,6 +74,8 @@ export default function Nav() {
             {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
 
+          {/* User dropdown — hidden in demo mode (no auth) */}
+          {username ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl border border-border/60 bg-muted/30 hover:bg-muted/60 transition-colors">
@@ -101,6 +103,15 @@ export default function Nav() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          ) : (
+          /* Demo mode placeholder — matches auth box visually, no interaction */
+          <div className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl border border-border/60 bg-muted/30 cursor-default select-none">
+            <div className="w-6 h-6 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+              <User className="w-3.5 h-3.5 text-primary" />
+            </div>
+            <span className="hidden sm:inline text-sm font-medium text-muted-foreground">Demo User</span>
+          </div>
+          )}
         </div>
       </div>
 

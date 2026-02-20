@@ -17,56 +17,41 @@ import TryPage from "@/pages/try";
 import TrialDashboard from "@/pages/trial-dashboard";
 import Nav from "@/components/nav";
 
+// AUTH BYPASS: ProtectedRoute is temporarily a passthrough for demo mode.
+// To re-enable auth: restore the isAuthenticated check from the original.
 function ProtectedRoute({ component: Component }: { component: () => JSX.Element }) {
-  const { isAuthenticated } = useAuth();
-
-  if (!isAuthenticated) {
-    return <Redirect to="/" />;
-  }
-
   return <Component />;
 }
 
+// AUTH BYPASS: Router sends "/" directly to DashboardOverview.
+// All auth pages (signin, signup, landing, try) are preserved and just unreachable for now.
+// To re-enable: restore the original Router with isAuthenticated checks.
 function Router() {
-  const { isAuthenticated } = useAuth();
-
   return (
     <Switch>
-      {/* Public routes */}
-      <Route path="/signin" component={SignInPage} />
-      <Route path="/signup" component={SignUpPage} />
-      
-      {/* Trial mode routes - no auth required */}
-      <Route path="/try" component={TryPage} />
-      <Route path="/try/results/:id" component={TrialDashboard} />
-      
-      {/* Landing page - redirects authenticated users to dashboard */}
-      <Route 
-        path="/" 
-        component={() => {
-          if (isAuthenticated) {
-            return <Redirect to="/dashboard" />;
-          }
-          return <LandingPage />;
-        }} 
-      />
-      
-      {/* Protected routes */}
-      <Route path="/dashboard" component={() => <ProtectedRoute component={DashboardOverview} />} />
-      <Route path="/upload" component={() => <ProtectedRoute component={UploadPage} />} />
-      <Route path="/history" component={() => <ProtectedRoute component={HistoryPage} />} />
-      <Route path="/results/:id" component={() => <ProtectedRoute component={Dashboard} />} />
+      {/* Previously auth-gated routes — now open for demo */}
+      <Route path="/" component={DashboardOverview} />
+      <Route path="/dashboard" component={DashboardOverview} />
+      <Route path="/upload" component={UploadPage} />
+      <Route path="/history" component={HistoryPage} />
+      <Route path="/results/:id" component={Dashboard} />
+
+      {/* Auth + trial pages preserved but unreachable in demo mode */}
+      {/* <Route path="/signin" component={SignInPage} /> */}
+      {/* <Route path="/signup" component={SignUpPage} /> */}
+      {/* <Route path="/try" component={TryPage} /> */}
+      {/* <Route path="/try/results/:id" component={TrialDashboard} /> */}
+
       <Route component={NotFound} />
     </Switch>
   );
 }
 
 function AppContent() {
-  const { isAuthenticated } = useAuth();
-
+  // AUTH BYPASS: Nav always shown. To re-enable: wrap with `isAuthenticated &&`
   return (
     <>
-      {isAuthenticated && <Nav />}
+      <Nav />
       <Router />
     </>
   );
