@@ -112,12 +112,12 @@ export default function UploadPage() {
   }, [uploadMutation, setLocation, toast]);
 
   return (
-    <div className="h-screen overflow-hidden bg-background flex flex-col">
+    <div className="h-[calc(100vh-3.5rem)] overflow-hidden bg-background flex flex-col">
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
         <div className="absolute -top-[30%] left-1/2 -translate-x-1/2 w-[70%] h-[50%] bg-primary/6 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 py-3">
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 overflow-hidden">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
