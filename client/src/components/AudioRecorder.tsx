@@ -49,8 +49,11 @@ export function AudioRecorder({ onRecordingComplete, isProcessing = false }: Aud
       setError(null);
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
+          // Keep audio processing off so speaker acoustic signatures
+          // are preserved — required for Deepgram speaker diarization.
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
           sampleRate: 44100,
         } 
       });
@@ -130,8 +133,12 @@ export function AudioRecorder({ onRecordingComplete, isProcessing = false }: Aud
   const handleAnalyze = () => {
     if (audioBlob) {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      // Strip codec suffix (e.g. "audio/webm;codecs=opus" → "audio/webm") so
+      // Deepgram receives a clean container type for diarization.
+      const cleanType = audioBlob.type.split(';')[0] || 'audio/webm';
+      const cleanBlob = new Blob([audioBlob], { type: cleanType });
       const filename = `recording-${timestamp}.webm`;
-      onRecordingComplete(audioBlob, filename);
+      onRecordingComplete(cleanBlob, filename);
     }
   };
 

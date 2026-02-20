@@ -37,6 +37,7 @@ function Router() {
       <Route path="/results/:id" component={Dashboard} />
 
       {/* Auth + trial pages preserved but unreachable in demo mode */}
+      <Route path="/landing" component={LandingPage} />
       {/* <Route path="/signin" component={SignInPage} /> */}
       {/* <Route path="/signup" component={SignUpPage} /> */}
       {/* <Route path="/try" component={TryPage} /> */}
@@ -48,10 +49,12 @@ function Router() {
 }
 
 function AppContent() {
-  // AUTH BYPASS: Nav always shown. To re-enable: wrap with `isAuthenticated &&`
+  const [location] = useLocation();
+  // AUTH BYPASS: Nav always shown except on /landing (has its own header).
+  // To re-enable auth gating: wrap with `isAuthenticated &&`
   return (
     <>
-      <Nav />
+      {location !== "/landing" && <Nav />}
       <Router />
     </>
   );
